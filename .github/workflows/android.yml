@@ -65,16 +65,34 @@ jobs:
           files: out/*.apk
           generate_release_notes: true
 
-      # 失败时把关键报错写进 Issue，方便直接定位
-      - name: Report failure to issue
+      # 失败时把关键报错写回仓库（ci-report.txt），便于直接定位
+      - name: Publish failure report
+        if: failure()
+        shell: python
+        run: |
+          import os
+          import re
+
+          log = ""
+          if os.path.exists("build.log"):
+              log = open("build.log", encoding="utf-8", errors="ignore").read()
+
+          lines = log.splitlines()
+          keep = [l for l in lines if re.search(r"^e: |error:|FAILURE:|Caused by:|^> ", l)]
+          if not keep:
+              keep = lines[-150:]
+          report = "\n".join(keep[:250]) or "no build.log produced"
+
+          with open("ci-report.txt", "w", encoding="utf-8") as f:
+              f.write(report)
+          print(report[:2000])
+
+      - name: Commit failure report
         if: failure()
         shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ERRORS=$(grep -E "^e: |error:|FAILURE:|Caused by:" build.log | head -60 || true)
-          if [ -z "$ERRORS" ]; then ERRORS=$(tail -c 3500 build.log); fi
-          gh issue create --repo "$GITHUB_REPOSITORY" \
-            --title "CI failed: ${GITHUB_SHA::7}" \
-            --body "$(printf 'Commit: %s\n\n```\n%s\n```\n' "$GITHUB_SHA" "$ERRORS")" || true
-          echo "$ERRORS"
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@example.com"
+          git add ci-report.txt || true
+          git commit -m "ci: build failure report [skip ci]" || true
+          git push || true
