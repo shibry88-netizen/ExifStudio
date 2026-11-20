@@ -11,6 +11,8 @@ import com.lucifer.exifstudio.data.DeviceRepository
 import com.lucifer.exifstudio.data.ExifEngine
 import com.lucifer.exifstudio.data.ExifProfile
 import com.lucifer.exifstudio.data.GeoClient
+import com.lucifer.exifstudio.data.HistoryItem
+import com.lucifer.exifstudio.data.HistoryStore
 import com.lucifer.exifstudio.data.PhotoStore
 import com.lucifer.exifstudio.data.Place
 import com.lucifer.exifstudio.data.Prefs
@@ -24,21 +26,45 @@ import kotlinx.coroutines.withContext
 data class StudioState(
     val photoUri: Uri? = null,
     val profile: ExifProfile = ExifProfile(),
+    /** 刚打开时的原始 EXIF，用来算「已改 N 项」 */
+    val original: ExifProfile? = null,
     val brands: List<Brand> = emptyList(),
     val device: Device? = null,
     val camera: Camera? = null,
+    val history: List<HistoryItem> = emptyList(),
     val busy: Boolean = false,
     val message: String? = null,
     val savedUri: Uri? = null
 ) {
     val hasPhoto: Boolean get() = photoUri != null
     val deviceCount: Int get() = brands.sumOf { it.devices.size }
+    val changedCount: Int get() = original?.let { diffCount(profile, it) } ?: 0
+}
+
+/** 只比可能被改写的字段，缩略图/宽高等不变的不算 */
+private fun diffCount(a: ExifProfile, b: ExifProfile): Int {
+    var n = 0
+    if (a.make != b.make) n++
+    if (a.model != b.model) n++
+    if (a.software != b.software) n++
+    if (a.lensModel != b.lensModel) n++
+    if (a.fNumber != b.fNumber) n++
+    if (a.exposureTime != b.exposureTime) n++
+    if (a.iso != b.iso) n++
+    if (a.focalLength != b.focalLength) n++
+    if (a.focal35 != b.focal35) n++
+    if (a.wbKelvin != b.wbKelvin || a.wbAuto != b.wbAuto) n++
+    if (a.dateTime != b.dateTime) n++
+    if (a.latitude != b.latitude || a.longitude != b.longitude) n++
+    if (a.address != b.address) n++
+    return n
 }
 
 class StudioViewModel(app: Application) : AndroidViewModel(app) {
 
     private val context get() = getApplication<Application>()
     private val prefs = Prefs(app)
+    private val historyStore = HistoryStore(app)
 
     private val _state = MutableStateFlow(StudioState())
     val state: StateFlow<StudioState> = _state.asStateFlow()
@@ -46,7 +72,8 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             val brands = withContext(Dispatchers.IO) { DeviceRepository.brands(app) }
-            _state.value = _state.value.copy(brands = brands)
+            val history = withContext(Dispatchers.IO) { historyStore.load() }
+            _state.value = _state.value.copy(brands = brands, history = history)
         }
     }
 
@@ -65,11 +92,17 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
             _state.value = _state.value.copy(
                 photoUri = uri,
                 profile = normalized,
+                original = normalized,
                 device = match?.first,
                 camera = match?.second,
                 busy = false
             )
         }
+    }
+
+    /** 从「最近编辑」重新打开一张成品图 */
+    fun openHistory(item: HistoryItem) {
+        runCatching { Uri.parse(item.uri) }.getOrNull()?.let { openPhoto(it) }
     }
 
     // ---------- 编辑 ----------
@@ -101,6 +134,12 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
         edit { it.copy(latitude = null, longitude = null, address = "", altitude = null) }
     }
 
+    /** 撤销所有改动，回到刚打开时的状态 */
+    fun reset() {
+        val original = _state.value.original ?: return
+        _state.value = _state.value.copy(profile = original)
+    }
+
     fun setDateTime(value: String) = edit { it.copy(dateTime = value) }
 
     fun setIso(value: String) = edit { it.copy(iso = value.filter { c -> c.isDigit() }) }
@@ -125,9 +164,23 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
                 val ok = ExifEngine.write(context, uri, snapshot.profile, file)
                 if (ok) PhotoStore.saveImage(context, file, PhotoStore.displayName()) else null
             }
+            val history = if (saved != null) {
+                withContext(Dispatchers.IO) {
+                    historyStore.add(
+                        HistoryItem(
+                            uri = saved.toString(),
+                            label = snapshot.profile.describeDevice(),
+                            time = System.currentTimeMillis()
+                        )
+                    )
+                }
+            } else {
+                _state.value.history
+            }
             _state.value = _state.value.copy(
                 busy = false,
                 savedUri = saved,
+                history = history,
                 message = if (saved != null) {
                     "已写入并保存到相册 · Pictures/影迹"
                 } else {
@@ -152,9 +205,23 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
                 val ok = ExifEngine.stripAll(context, uri, file)
                 if (ok) PhotoStore.saveImage(context, file, PhotoStore.displayName("CLEAN")) else null
             }
+            val history = if (saved != null) {
+                withContext(Dispatchers.IO) {
+                    historyStore.add(
+                        HistoryItem(
+                            uri = saved.toString(),
+                            label = "已清除 EXIF",
+                            time = System.currentTimeMillis()
+                        )
+                    )
+                }
+            } else {
+                _state.value.history
+            }
             _state.value = _state.value.copy(
                 busy = false,
                 savedUri = saved,
+                history = history,
                 message = if (saved != null) "已生成无 EXIF 的干净副本" else "去元数据失败"
             )
             onDone(saved != null)

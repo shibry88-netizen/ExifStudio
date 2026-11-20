@@ -7,17 +7,24 @@ plugins {
 
 android {
     namespace = "com.lucifer.exifstudio"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.lucifer.exifstudio"
         minSdk = 29
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        // Android 16/17 对新安装应用的 targetSdk 有下限要求，这里跟随当年平台
+        targetSdk = 36
+        versionCode = 3
+        versionName = "1.2.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
+    /**
+     * 发布签名配置。
+     * CI 在构建前把 keystore/release.jks.b64 解码成 keystore/release.jks（见 workflow），
+     * 本地构建时只要该文件存在就会自动签名。
+     * 证书一旦固定，后续版本可覆盖安装，不需要卸载重装。
+     */
     signingConfigs {
         create("release") {
             val propsFile = rootProject.file("keystore/signing.properties")
@@ -76,6 +83,10 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             excludes += "/META-INF/DEPENDENCIES"
+        }
+        // Android 15+ 的 16 KB 页大小设备要求原生库按 16 KB 对齐
+        jniLibs {
+            useLegacyPackaging = false
         }
     }
 
