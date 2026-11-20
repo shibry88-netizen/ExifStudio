@@ -47,7 +47,7 @@ jobs:
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           "$BT/apksigner" verify --print-certs "$APK"
           mkdir -p out
-          cp "$APK" "out/ExifStudio-${GITHUB_SHA::7}.apk"
+          cp "$APK" "out/ExifStudio.apk"
           ls -lh out
 
       - name: Upload artifact
@@ -58,12 +58,20 @@ jobs:
           path: out/*.apk
           retention-days: 30
 
+      # 每次构建成功都发一个 Release，方便直接下载 APK 安装（无需登录）
       - name: Publish GitHub Release
-        if: success() && startsWith(github.ref, 'refs/tags/')
+        if: success()
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: build-${{ github.run_number }}
+          name: 影迹 ExifStudio · build ${{ github.run_number }}
+          body: |
+            自动构建产物（commit ${{ github.sha }}）。
+
+            签名证书固定不变，后续版本可直接覆盖安装，无需卸载重装。
           files: out/*.apk
-          generate_release_notes: true
+          generate_release_notes: false
+          make_latest: true
 
       # 失败时把关键报错写回仓库（ci-report.txt），便于直接定位
       - name: Publish failure report
@@ -95,4 +103,5 @@ jobs:
           git config user.email "ci-bot@example.com"
           git add ci-report.txt || true
           git commit -m "ci: build failure report [skip ci]" || true
+          git pull --rebase || true
           git push || true
