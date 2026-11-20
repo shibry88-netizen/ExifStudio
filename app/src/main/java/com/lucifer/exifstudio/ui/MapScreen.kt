@@ -535,9 +535,17 @@ private fun CoordEditDialog(
         },
         text = {
             Column {
-                GlassField("纬度 -90 ~ 90", latText) { latText = it }
+                GlassField(
+                    placeholder = "纬度 -90 ~ 90",
+                    value = latText,
+                    onValueChange = { latText = it }
+                )
                 Spacer(Modifier.height(10.dp))
-                GlassField("经度 -180 ~ 180", lonText) { lonText = it }
+                GlassField(
+                    placeholder = "经度 -180 ~ 180",
+                    value = lonText,
+                    onValueChange = { lonText = it }
+                )
                 if (error.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
                     Text(error, style = MaterialTheme.typography.bodySmall, color = Tok.Danger)
