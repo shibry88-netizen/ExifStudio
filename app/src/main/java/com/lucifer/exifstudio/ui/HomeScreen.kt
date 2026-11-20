@@ -1,6 +1,7 @@
 package com.lucifer.exifstudio.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +41,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.lucifer.exifstudio.data.HistoryItem
 import com.lucifer.exifstudio.vm.StudioState
 
 @Composable
@@ -46,7 +50,8 @@ fun HomeScreen(
     onPick: () -> Unit,
     onOpenEditor: () -> Unit,
     onOpenLibrary: () -> Unit,
-    onStripAll: () -> Unit
+    onStripAll: () -> Unit,
+    onOpenHistory: (HistoryItem) -> Unit
 ) {
     Column(
         Modifier
@@ -55,23 +60,31 @@ fun HomeScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = Tok.Page)
     ) {
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(20.dp))
 
         Text(
-            "EXIF STUDIO",
+            "EXIFSTUDIO",
             style = MaterialTheme.typography.labelSmall,
             color = Tok.Accent2
         )
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text("影迹", style = MaterialTheme.typography.displayLarge, color = Tok.Text1)
+            Spacer(Modifier.width(9.dp))
+            Text(
+                "ExifStudio",
+                style = MaterialTheme.typography.titleLarge,
+                color = Tok.Text3
+            )
+        }
         Spacer(Modifier.height(8.dp))
-        Text("影迹", style = MaterialTheme.typography.displayLarge, color = Tok.Text1)
-        Spacer(Modifier.height(6.dp))
         Text(
-            "改写照片的拍摄参数 · 机型 / 镜头 / ISO / 白平衡 / 位置",
+            "读取 · 改写 · 伪装照片的拍摄参数",
             style = MaterialTheme.typography.bodyMedium,
             color = Tok.Text3
         )
 
-        Spacer(Modifier.height(26.dp))
+        Spacer(Modifier.height(22.dp))
 
         if (state.hasPhoto) {
             PhotoPreviewCard(state, onOpenEditor)
@@ -85,7 +98,33 @@ fun HomeScreen(
             onClick = onPick
         )
 
-        Spacer(Modifier.height(14.dp))
+        if (state.history.isNotEmpty()) {
+            Spacer(Modifier.height(26.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "最近编辑",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Tok.Text2,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    "${state.history.size} 张",
+                    style = Mono.copy(fontSize = 11.sp0()),
+                    color = Tok.Text3
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(state.history) { item ->
+                    HistoryThumb(item) { onOpenHistory(item) }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
 
         Row(
             Modifier.fillMaxWidth(),
@@ -95,15 +134,16 @@ fun HomeScreen(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Rounded.CameraAlt,
                 title = "设备参数库",
-                subtitle = "${state.deviceCount} 款机型 · 前后置",
+                subtitle = "${state.deviceCount} 款机型",
                 onClick = onOpenLibrary
             )
             EntryCard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Rounded.CleaningServices,
                 title = "清除 EXIF",
-                subtitle = if (state.hasPhoto) "生成干净副本" else "先选一张照片",
+                subtitle = if (state.hasPhoto) "保留画质" else "先选一张照片",
                 enabled = state.hasPhoto,
+                tint = Tok.Danger,
                 onClick = onStripAll
             )
         }
@@ -127,13 +167,14 @@ fun HomeScreen(
             }
         }
 
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(26.dp))
         Text(
-            "所有处理都在本机完成，不上传任何照片。",
+            "所有元数据仅保存在设备本地",
             style = MaterialTheme.typography.labelSmall,
-            color = Tok.Text4
+            color = Tok.Text4,
+            modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(30.dp))
     }
 }
 
@@ -167,6 +208,15 @@ private fun PhotoPreviewCard(state: StudioState, onClick: () -> Unit) {
                 )
         )
 
+        if (state.changedCount > 0) {
+            Badge(
+                text = "已改 ${state.changedCount} 项",
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+            )
+        }
+
         Column(
             Modifier
                 .align(Alignment.BottomStart)
@@ -199,6 +249,56 @@ private fun PhotoPreviewCard(state: StudioState, onClick: () -> Unit) {
     }
 }
 
+/** 强调色胶囊徽标：已改 N 项 / 保留画质徽标都用它 */
+@Composable
+fun Badge(text: String, modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .clip(RoundedCornerShape(Tok.RChip))
+            .background(Tok.Accent.copy(alpha = 0.22f))
+            .border(1.dp, Tok.Accent.copy(alpha = 0.45f), RoundedCornerShape(Tok.RChip))
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelSmall,
+            color = Tok.Text1
+        )
+    }
+}
+
+@Composable
+private fun HistoryThumb(item: HistoryItem, onClick: () -> Unit) {
+    Column(
+        Modifier
+            .width(112.dp)
+            .clickable { onClick() }
+    ) {
+        Box(
+            Modifier
+                .size(112.dp)
+                .clip(RoundedCornerShape(Tok.RThumb))
+                .background(Tok.Glass)
+                .border(1.dp, Tok.Stroke, RoundedCornerShape(Tok.RThumb))
+        ) {
+            AsyncImage(
+                model = item.uri,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            item.label.ifBlank { "已编辑" },
+            style = Mono.copy(fontSize = 10.5.sp0()),
+            color = Tok.Text3,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
 @Composable
 private fun EntryCard(
     icon: ImageVector,
@@ -206,6 +306,7 @@ private fun EntryCard(
     subtitle: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    tint: Color = Tok.Accent2,
     onClick: () -> Unit
 ) {
     Column(
@@ -218,13 +319,13 @@ private fun EntryCard(
             Modifier
                 .size(34.dp)
                 .clip(CircleShape)
-                .background(Tok.Accent.copy(alpha = if (enabled) 0.16f else 0.06f)),
+                .background(tint.copy(alpha = if (enabled) 0.16f else 0.06f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (enabled) Tok.Accent2 else Tok.Text4,
+                tint = if (enabled) tint else Tok.Text4,
                 modifier = Modifier.size(17.dp)
             )
         }
@@ -237,7 +338,7 @@ private fun EntryCard(
         Spacer(Modifier.height(3.dp))
         Text(
             subtitle,
-            style = MaterialTheme.typography.bodySmall,
+            style = Mono.copy(fontSize = 10.5.sp0()),
             color = Tok.Text3,
             maxLines = 2
         )
