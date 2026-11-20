@@ -110,11 +110,7 @@ fun HomeScreen(
                     color = Tok.Text2,
                     modifier = Modifier.weight(1f)
                 )
-                Text(
-                    "${state.history.size} 张",
-                    style = Mono.copy(fontSize = 11.sp0()),
-                    color = Tok.Text3
-                )
+                Text("${state.history.size} 张", style = Mono, color = Tok.Text3)
             }
             Spacer(Modifier.height(10.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -171,8 +167,7 @@ fun HomeScreen(
         Text(
             "所有元数据仅保存在设备本地",
             style = MaterialTheme.typography.labelSmall,
-            color = Tok.Text4,
-            modifier = Modifier.fillMaxWidth()
+            color = Tok.Text4
         )
         Spacer(Modifier.height(30.dp))
     }
@@ -249,7 +244,7 @@ private fun PhotoPreviewCard(state: StudioState, onClick: () -> Unit) {
     }
 }
 
-/** 强调色胶囊徽标：已改 N 项 / 保留画质徽标都用它 */
+/** 强调色胶囊徽标 */
 @Composable
 fun Badge(text: String, modifier: Modifier = Modifier) {
     Box(
@@ -291,7 +286,7 @@ private fun HistoryThumb(item: HistoryItem, onClick: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         Text(
             item.label.ifBlank { "已编辑" },
-            style = Mono.copy(fontSize = 10.5.sp0()),
+            style = Mono,
             color = Tok.Text3,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -338,7 +333,7 @@ private fun EntryCard(
         Spacer(Modifier.height(3.dp))
         Text(
             subtitle,
-            style = Mono.copy(fontSize = 10.5.sp0()),
+            style = Mono,
             color = Tok.Text3,
             maxLines = 2
         )

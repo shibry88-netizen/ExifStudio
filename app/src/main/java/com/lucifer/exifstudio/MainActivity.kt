@@ -124,7 +124,11 @@ private fun AppRoot(vm: StudioViewModel, incoming: MutableState<Uri?>) {
                     },
                     onOpenEditor = { screen = Screen.Editor },
                     onOpenLibrary = { showDevices = true },
-                    onStripAll = { vm.stripAll { } }
+                    onStripAll = { vm.stripAll { } },
+                    onOpenHistory = { item ->
+                        vm.openHistory(item)
+                        screen = Screen.Editor
+                    }
                 )
 
                 Screen.Editor -> EditorScreen(
