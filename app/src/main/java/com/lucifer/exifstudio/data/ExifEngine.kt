@@ -32,16 +32,15 @@ import kotlin.math.log2
  * 所以从 build-22 起，[applyProfile] 会补齐一整套相机骨架：
  * ExifVersion、FlashpixVersion、ColorSpace、ComponentsConfiguration、
  * ExposureProgram、MeteringMode、SceneType、ExposureMode、SensingMethod、
- * OffsetTime*、APEX 派生值、FocalPlane 分辨率、LensSpecification，
- * 并写入一张内嵌缩略图（相机原片必然带 IFD1 缩略图）。
+ * FileSource、OffsetTime*、APEX 派生值、FocalPlane 分辨率、LensSpecification。
+ *
+ * 注：AndroidX ExifInterface 至今（含 1.4.1）都没有写入缩略图的公开 API
+ * （只有 getThumbnail 系列，setThumbnail 从未公开），因此改用 Exif 2.3 的
+ * `FileSource = 3`（DSC，数码静态相机）作为等效的「相机来源」标记。
  */
 object ExifEngine {
 
     private const val DATE_PATTERN = "yyyy:MM:dd HH:mm:ss"
-
-    /** 缩略图目标尺寸，与主流手机相机写入的 IFD1 缩略图一致 */
-    private const val THUMB_W = 320
-    private const val THUMB_H = 240
 
     // ---------- 读取 ----------
 
@@ -109,7 +108,7 @@ object ExifEngine {
             if (!isJpeg(dst) && !transcodeToJpeg(dst)) return false
 
             val ex = ExifInterface(dst.absolutePath)
-            applyProfile(ex, profile, dst.absolutePath)
+            applyProfile(ex, profile)
             ex.saveAttributes()
             true
         } catch (t: Throwable) {
@@ -146,7 +145,7 @@ object ExifEngine {
      *  - 核心字段（Make/Model/曝光三要素/时间/GPS）直接写，失败即整体失败；
      *  - 骨架与锦上添花的字段用 [safe] 包裹，个别写不进去也不影响整体落盘。
      */
-    private fun applyProfile(ex: ExifInterface, p: ExifProfile, path: String) {
+    private fun applyProfile(ex: ExifInterface, p: ExifProfile) {
         // ===== 1. 身份 =====
         if (p.make.isNotBlank()) ex.setAttribute(ExifInterface.TAG_MAKE, p.make.trim())
         if (p.model.isNotBlank()) ex.setAttribute(ExifInterface.TAG_MODEL, p.model.trim())
@@ -164,6 +163,8 @@ object ExifEngine {
         safe { ex.setAttribute(ExifInterface.TAG_COLOR_SPACE, "1") }
         safe { ex.setAttribute(ExifInterface.TAG_COMPONENTS_CONFIGURATION, "1,2,3,0") }
         safe { ex.setAttribute(ExifInterface.TAG_INTEROPERABILITY_INDEX, "R98") }
+        // FileSource = 3 表示 DSC（数码静态相机），替代无法写入的内嵌缩略图
+        safe { ex.setAttribute(ExifInterface.TAG_FILE_SOURCE, "3") }
 
         // ===== 3. 曝光三要素 + 派生 APEX 值 =====
         if (p.fNumber.isNotBlank()) {
@@ -279,41 +280,6 @@ object ExifEngine {
                 safe { ex.setAttribute(ExifInterface.TAG_GPS_AREA_INFORMATION, p.address) }
             }
         }
-
-        // ===== 11. 内嵌缩略图 =====
-        safe { attachThumbnail(ex, path) }
-    }
-
-    /** 写一张 320x240 的 IFD1 缩略图。相机原片一定带，部分相册据此判定「相机照」。 */
-    private fun attachThumbnail(ex: ExifInterface, path: String) {
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(path, bounds)
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return
-
-        var sample = 1
-        while (bounds.outWidth / (sample * 2) >= THUMB_W && bounds.outHeight / (sample * 2) >= THUMB_H) {
-            sample *= 2
-        }
-        val decoded = BitmapFactory.decodeFile(
-            path,
-            BitmapFactory.Options().apply { inSampleSize = sample }
-        ) ?: return
-
-        val scaled = scaleDown(decoded, THUMB_W, THUMB_H)
-        ex.setThumbnail(scaled)
-        if (scaled !== decoded) decoded.recycle()
-        scaled.recycle()
-    }
-
-    private fun scaleDown(src: Bitmap, maxW: Int, maxH: Int): Bitmap {
-        if (src.width <= maxW && src.height <= maxH) return src
-        val ratio = minOf(maxW.toFloat() / src.width, maxH.toFloat() / src.height)
-        return Bitmap.createScaledBitmap(
-            src,
-            (src.width * ratio).toInt().coerceAtLeast(1),
-            (src.height * ratio).toInt().coerceAtLeast(1),
-            true
-        )
     }
 
     // ---------- 校验 ----------
@@ -326,13 +292,20 @@ object ExifEngine {
      * 这里同时用两套解析器读一遍，把差异暴露给用户。
      */
     fun verify(file: File): String {
-        val axModel = axFlag(file) { it.getAttribute(ExifInterface.TAG_MODEL).orEmpty().isNotBlank() }
-        val axLens = axFlag(file) { it.getAttribute(ExifInterface.TAG_LENS_MODEL).orEmpty().isNotBlank() }
-        val axIso = axFlag(file) {
-            (it.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)
-                ?: it.getAttribute(ExifInterface.TAG_ISO_SPEED_RATINGS)).orEmpty().isNotBlank()
+        var axModel = false
+        var axLens = false
+        var axIso = false
+        var axGps = false
+        runCatching {
+            val e = ExifInterface(file.absolutePath)
+            axModel = e.getAttribute(ExifInterface.TAG_MODEL).orEmpty().isNotBlank()
+            axLens = e.getAttribute(ExifInterface.TAG_LENS_MODEL).orEmpty().isNotBlank()
+            axIso = (
+                e.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)
+                    ?: e.getAttribute(ExifInterface.TAG_ISO_SPEED_RATINGS)
+                ).orEmpty().isNotBlank()
+            axGps = e.latLong != null
         }
-        val axGps = axFlag(file) { it.latLong != null }
 
         val sys = runCatching {
             val e = SysExif(file.absolutePath)
@@ -346,16 +319,13 @@ object ExifEngine {
         }.getOrNull()
 
         val sysText = if (sys == null) {
-            "系统引擎✗包裹"
+            "系统引擎✗解析"
         } else {
             "系统 型号${tick(sys[0])}快门${tick(sys[1])}光圈${tick(sys[2])}ISO${tick(sys[3])}时间${tick(sys[4])}"
         }
 
         return "AX 型号${tick(axModel)}镜头${tick(axLens)}ISO${tick(axIso)}定位${tick(axGps)}\n$sysText"
     }
-
-    private inline fun axFlag(file: File, block: (ExifInterface) -> Boolean): Boolean =
-        runCatching { block(ExifInterface(file.absolutePath)) }.getOrDefault(false)
 
     private fun tick(v: Boolean): String = if (v) "✓" else "✗"
 
