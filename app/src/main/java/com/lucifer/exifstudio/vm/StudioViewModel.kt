@@ -2,7 +2,6 @@ package com.lucifer.exifstudio.vm
 
 import android.app.Application
 import android.net.Uri
-import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.lucifer.exifstudio.data.Brand
@@ -160,27 +159,21 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
             val result = withContext(Dispatchers.IO) {
                 val file = PhotoStore.cacheFile(context, "out_${System.currentTimeMillis()}.jpg")
                 if (!ExifEngine.write(context, uri, snapshot.profile, file)) {
-                    return@withContext null to ""
+                    return@withContext Saved(null, "")
                 }
-                // 写完后立刻回读成品，校验关键字段真写进去了
-                val check = runCatching {
-                    val back = ExifInterface(file.absolutePath)
-                    val hasModel = back.getAttribute(ExifInterface.TAG_MODEL).orEmpty().isNotBlank()
-                    val hasLens = back.getAttribute(ExifInterface.TAG_LENS_MODEL).orEmpty().isNotBlank()
-                    val hasIso = back.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)
-                        .orEmpty().isNotBlank()
-                    val hasGps = back.latLong != null
-                    buildString {
-                        append(if (hasModel) "型号✓ " else "型号✗ ")
-                        append(if (hasLens) "镜头✓ " else "镜头✗ ")
-                        append(if (hasIso) "ISO✓ " else "ISO✗ ")
-                        append(if (hasGps) "位置✓" else "位置✗")
-                    }
-                }.getOrDefault("")
-                PhotoStore.saveImage(context, file, PhotoStore.displayName()) to check
+                // 双引擎回读：AndroidX 读得到 + 系统 ExifInterface 读得到，才算真写进去
+                val check = ExifEngine.verify(file)
+                val dateTaken = ExifEngine.parseStamp(snapshot.profile.dateTime)
+                val saved = PhotoStore.saveImage(
+                    context,
+                    file,
+                    PhotoStore.displayName(),
+                    dateTaken
+                )
+                Saved(saved, check)
             }
-            val saved = result.first
-            val check = result.second
+            val saved = result.uri
+            val check = result.check
             val history = if (saved != null) {
                 withContext(Dispatchers.IO) {
                     historyStore.add(
@@ -199,13 +192,15 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
                 savedUri = saved,
                 history = history,
                 message = if (saved != null) {
-                    "已保存到相册 · 写入校验 $check"
+                    "已保存到相册\n$check"
                 } else {
                     "写入失败。HEIC/ProRAW 等格式可能不支持原地写 EXIF，请换 JPEG 再试。"
                 }
             )
         }
     }
+
+    private data class Saved(val uri: Uri?, val check: String)
 
     fun stripAll(onDone: (Boolean) -> Unit) {
         val snapshot = _state.value
