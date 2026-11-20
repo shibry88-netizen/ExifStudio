@@ -1,0 +1,337 @@
+{
+  "version": 1,
+  "schema": ["facing", "role", "lensModel", "focal35", "fNumber", "sensor", "iso", "wb", "shutter"],
+  "note": "facing: R=后置 F=前置；wb: auto 或色温K值。参数为机型公开规格的参考整理，可在 App 内手动改写。",
+  "brands": [
+    {
+      "id": "apple",
+      "name": "Apple",
+      "zh": "苹果",
+      "devices": [
+        {"id": "apple-iphone-16", "n": "iPhone 16", "y": 2024, "make": "Apple", "model": "iPhone 16", "sw": "iOS 18.0", "cam": [
+          ["R", "主摄", "iPhone 16 back camera 6.765mm f/1.6", 26, 1.6, "1/1.56in Sony IMX904 48MP", 100, "auto", "1/120"],
+          ["R", "超广角", "iPhone 16 back camera 2.22mm f/2.2", 13, 2.2, "1/3.4in Sony IMX633 12MP", 160, "auto", "1/160"],
+          ["F", "前置", "iPhone 16 front camera 2.71mm f/1.9", 24, 1.9, "1/3.6in 12MP", 200, "auto", "1/60"]
+        ]},
+        {"id": "apple-iphone-16-plus", "n": "iPhone 16 Plus", "y": 2024, "make": "Apple", "model": "iPhone 16 Plus", "sw": "iOS 18.0", "cam": [
+          ["R", "主摄", "iPhone 16 Plus back camera 6.765mm f/1.6", 26, 1.6, "1/1.56in Sony IMX904 48MP", 100, "auto", "1/120"],
+          ["R", "超广角", "iPhone 16 Plus back camera 2.22mm f/2.2", 13, 2.2, "1/3.4in Sony IMX633 12MP", 160, "auto", "1/160"],
+          ["F", "前置", "iPhone 16 Plus front camera 2.71mm f/1.9", 24, 1.9, "1/3.6in 12MP", 200, "auto", "1/60"]
+        ]},
+        {"id": "apple-iphone-16-pro", "n": "iPhone 16 Pro", "y": 2024, "make": "Apple", "model": "iPhone 16 Pro", "sw": "iOS 18.0", "cam": [
+          ["R", "主摄", "iPhone 16 Pro back triple camera 6.765mm f/1.78", 24, 1.78, "1/1.28in Sony IMX903 48MP", 100, "auto", "1/120"],
+          ["R", "超广角", "iPhone 16 Pro back triple camera 2.22mm f/2.2", 13, 2.2, "1/2.55in 48MP", 160, "auto", "1/160"],
+          ["R", "长焦", "iPhone 16 Pro back triple camera 15.66mm f/2.8", 120, 2.8, "1/3.06in 12MP", 200, "auto", "1/250"],
+          ["F", "前置", "iPhone 16 Pro front camera 2.71mm f/1.9", 24, 1.9, "1/3.6in 12MP", 200, "auto", "1/60"]
+        ]},
+        {"id": "apple-iphone-16-pro-max", "n": "iPhone 16 Pro Max", "y": 2024, "make": "Apple", "model": "iPhone 16 Pro Max", "sw": "iOS 18.0", "cam": [
+          ["R", "主摄", "iPhone 16 Pro Max back triple camera 6.765mm f/1.78", 24, 1.78, "1/1.28in Sony IMX903 48MP", 100, "auto", "1/120"],
+          ["R", "超广角", "iPhone 16 Pro Max back triple camera 2.22mm f/2.2", 13, 2.2, "1/2.55in 48MP", 160, "auto", "1/160"],
+          ["R", "长焦", "iPhone 16 Pro Max back triple camera 15.66mm f/2.8", 120, 2.8, "1/3.06in 12MP", 200, "auto", "1/250"],
+          ["F", "前置", "iPhone 16 Pro Max front camera 2.71mm f/1.9", 24, 1.9, "1/3.6in 12MP", 200, "auto", "1/60"]
+        ]},
+        {"id": "apple-iphone-16e", "n": "iPhone 16e", "y": 2025, "make": "Apple", "model": "iPhone 16e", "sw": "iOS 18.3", "cam": [
+          ["R", "主摄", "iPhone 16e back camera 6.765mm f/1.6", 26, 1.6, "1/1.56in Sony IMX904 48MP", 100, "auto", "1/120"],
+          ["F", "前置", "iPhone 16e front camera 2.71mm f/1.9", 24, 1.9, "1/3.6in 12MP", 200, "auto", "1/60"]
+        ]},
+        {"id": "apple-iphone-17", "n": "iPhone 17", "y": 2025, "make": "Apple", "model": "iPhone 17", "sw": "iOS 26.0", "cam": [
+          ["R", "主摄", "iPhone 17 back dual camera 6.765mm f/1.6", 26, 1.6, "1/1.56in Sony IMX904 48MP", 100, "auto", "1/120"],
+          ["R", "超广角", "iPhone 17 back dual camera 2.22mm f/2.2", 13, 2.2, "1/2.55in 48MP", 160, "auto", "1/160"],
+          ["F", "前置", "iPhone 17 front camera 2.44mm f/1.9", 24, 1.9, "1/3.0in 18MP Center Stage", 200, "auto", "1/60"]
+        ]},
+        {"id": "apple-iphone-17-pro", "n": "iPhone 17 Pro", "y": 2025, "make": "Apple", "model": "iPhone 17 Pro", "sw": "iOS 26.0", "cam": [
+          ["R", "主摄", "iPhone 17 Pro back triple camera 6.765mm f/1.78", 24, 1.78, "1/1.28in Sony IMX903 48MP", 100, "auto", "1/120"],
+          ["R", "超广角", "iPhone 17 Pro back triple camera 2.22mm f/2.2", 13, 2.2, "1/2.55in 48MP", 160, "auto", "1/160"],
+          ["R", "长焦", "iPhone 17 Pro back triple camera 13.05mm f/2.8", 100, 2.8, "1/2.55in 48MP 4x", 250, "auto", "1/250"],
+          ["F", "前置", "iPhone 17 Pro front camera 2.44mm f/1.9", 24, 1.9, "1/3.0in 18MP Center Stage", 200, "auto", "1/60"]
+        ]},
+        {"id": "apple-iphone-17-pro-max", "n": "iPhone 17 Pro Max", "y": 2025, "make": "Apple", "model": "iPhone 17 Pro Max", "sw": "iOS 26.0", "cam": [
+          ["R", "主摄", "iPhone 17 Pro Max back triple camera 6.765mm f/1.78", 24, 1.78, "1/1.28in Sony IMX903 48MP", 100, "auto", "1/120"],
+          ["R", "超广角", "iPhone 17 Pro Max back triple camera 2.22mm f/2.2", 13, 2.2, "1/2.55in 48MP", 160, "auto", "1/160"],
+          ["R", "长焦", "iPhone 17 Pro Max back triple camera 13.05mm f/2.8", 100, 2.8, "1/2.55in 48MP 4x", 250, "auto", "1/250"],
+          ["F", "前置", "iPhone 17 Pro Max front camera 2.44mm f/1.9", 24, 1.9, "1/3.0in 18MP Center Stage", 200, "auto", "1/60"]
+        ]},
+        {"id": "apple-iphone-air", "n": "iPhone Air", "y": 2025, "make": "Apple", "model": "iPhone Air", "sw": "iOS 26.0", "cam": [
+          ["R", "主摄", "iPhone Air back camera 6.765mm f/1.6", 26, 1.6, "1/1.56in Sony IMX904 48MP", 100, "auto", "1/120"],
+          ["F", "前置", "iPhone Air front camera 2.44mm f/1.9", 24, 1.9, "1/3.0in 18MP Center Stage", 200, "auto", "1/60"]
+        ]}
+      ]
+    },
+    {
+      "id": "vivo",
+      "name": "vivo",
+      "zh": "vivo",
+      "devices": [
+        {"id": "vivo-x200", "n": "vivo X200", "y": 2024, "make": "vivo", "model": "vivo X200", "sw": "OriginOS 5", "cam": [
+          ["R", "主摄", "vivo X200 back camera 5.21mm f/1.57", 23, 1.57, "1/1.56in Sony IMX921 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "vivo X200 back camera 2.24mm f/2.0", 15, 2.0, "1/2.76in Samsung JN1 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "vivo X200 back camera 20.0mm f/2.57", 70, 2.57, "1/1.95in OmniVision OV50D 50MP", 200, "auto", "1/250"],
+          ["F", "前置", "vivo X200 front camera 4.0mm f/2.0", 24, 2.0, "1/2.76in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "vivo-x200-pro", "n": "vivo X200 Pro", "y": 2024, "make": "vivo", "model": "vivo X200 Pro", "sw": "OriginOS 5", "cam": [
+          ["R", "主摄", "vivo X200 Pro back camera 5.21mm f/1.57", 23, 1.57, "1/1.28in Sony LYT-818 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "vivo X200 Pro back camera 2.24mm f/2.0", 15, 2.0, "1/2.76in Samsung JN1 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "vivo X200 Pro back camera 26.5mm f/2.67", 85, 2.67, "1/1.4in Samsung HP9 200MP", 200, "auto", "1/250"],
+          ["F", "前置", "vivo X200 Pro front camera 4.0mm f/2.0", 24, 2.0, "1/2.76in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "vivo-x200-pro-mini", "n": "vivo X200 Pro mini", "y": 2024, "make": "vivo", "model": "vivo X200 Pro mini", "sw": "OriginOS 5", "cam": [
+          ["R", "主摄", "vivo X200 Pro mini back camera 5.21mm f/1.57", 23, 1.57, "1/1.56in Sony IMX921 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "vivo X200 Pro mini back camera 2.24mm f/2.0", 15, 2.0, "1/2.76in Samsung JN1 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "vivo X200 Pro mini back camera 20.0mm f/2.57", 70, 2.57, "1/1.95in OV50D 50MP", 200, "auto", "1/250"],
+          ["F", "前置", "vivo X200 Pro mini front camera 4.0mm f/2.0", 24, 2.0, "1/2.76in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "vivo-x200-ultra", "n": "vivo X200 Ultra", "y": 2025, "make": "vivo", "model": "vivo X200 Ultra", "sw": "OriginOS 5", "cam": [
+          ["R", "主摄", "vivo X200 Ultra back camera 10.0mm f/1.69", 35, 1.69, "1/1.28in Sony LYT-818 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "vivo X200 Ultra back camera 2.1mm f/2.0", 14, 2.0, "1/1.56in Sony LYT-818 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "vivo X200 Ultra back camera 26.5mm f/2.27", 85, 2.27, "1/1.4in Samsung HP9 200MP", 200, "auto", "1/250"],
+          ["F", "前置", "vivo X200 Ultra front camera 4.0mm f/2.0", 24, 2.0, "1/2.76in 50MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "vivo-x300", "n": "vivo X300", "y": 2025, "make": "vivo", "model": "vivo X300", "sw": "OriginOS 6", "cam": [
+          ["R", "主摄", "vivo X300 back camera 5.4mm f/1.68", 23, 1.68, "1/1.4in Samsung HPB 200MP", 100, "auto", "1/120"],
+          ["R", "超广角", "vivo X300 back camera 2.24mm f/2.0", 15, 2.0, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "vivo X300 back camera 20.0mm f/2.57", 70, 2.57, "1/1.95in OV50D 50MP", 200, "auto", "1/250"],
+          ["F", "前置", "vivo X300 front camera 4.0mm f/2.0", 24, 2.0, "1/2.76in 50MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "vivo-x300-pro", "n": "vivo X300 Pro", "y": 2025, "make": "vivo", "model": "vivo X300 Pro", "sw": "OriginOS 6", "cam": [
+          ["R", "主摄", "vivo X300 Pro back camera 5.21mm f/1.57", 23, 1.57, "1/1.28in Sony LYT-828 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "vivo X300 Pro back camera 2.24mm f/2.0", 15, 2.0, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "vivo X300 Pro back camera 26.5mm f/2.67", 85, 2.67, "1/1.4in Samsung HPB 200MP", 200, "auto", "1/250"],
+          ["F", "前置", "vivo X300 Pro front camera 4.0mm f/2.0", 24, 2.0, "1/2.76in 50MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "vivo-s20", "n": "vivo S20", "y": 2025, "make": "vivo", "model": "vivo S20", "sw": "OriginOS 5", "cam": [
+          ["R", "主摄", "vivo S20 back camera 5.4mm f/1.88", 26, 1.88, "1/1.56in OV50E 50MP", 125, "auto", "1/120"],
+          ["R", "超广角", "vivo S20 back camera 1.6mm f/2.2", 16, 2.2, "1/4.0in 8MP", 500, "auto", "1/160"],
+          ["F", "前置", "vivo S20 front camera 4.0mm f/2.0", 24, 2.0, "1/2.76in 50MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "vivo-s30", "n": "vivo S30", "y": 2025, "make": "vivo", "model": "vivo S30", "sw": "OriginOS 5", "cam": [
+          ["R", "主摄", "vivo S30 back camera 5.4mm f/1.88", 26, 1.88, "1/1.56in OV50E 50MP", 125, "auto", "1/120"],
+          ["R", "超广角", "vivo S30 back camera 1.6mm f/2.2", 16, 2.2, "1/4.0in 8MP", 500, "auto", "1/160"],
+          ["R", "长焦", "vivo S30 back camera 8.7mm f/2.4", 50, 2.4, "1/2.76in 50MP", 200, "auto", "1/200"],
+          ["F", "前置", "vivo S30 front camera 4.0mm f/2.0", 24, 2.0, "1/2.76in 50MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "vivo-y300-pro", "n": "vivo Y300 Pro", "y": 2025, "make": "vivo", "model": "vivo Y300 Pro", "sw": "OriginOS 5", "cam": [
+          ["R", "主摄", "vivo Y300 Pro back camera 5.4mm f/1.79", 26, 1.79, "1/1.95in 50MP", 160, "auto", "1/120"],
+          ["R", "虚化", "vivo Y300 Pro back camera 1.8mm f/2.4", 22, 2.4, "1/5.0in 2MP", 800, "auto", "1/60"],
+          ["F", "前置", "vivo Y300 Pro front camera 4.0mm f/2.0", 24, 2.0, "1/3.1in 32MP", 400, "auto", "1/60"]
+        ]}
+      ]
+    },
+    {
+      "id": "oppo",
+      "name": "OPPO",
+      "zh": "OPPO",
+      "devices": [
+        {"id": "oppo-find-x8", "n": "OPPO Find X8", "y": 2024, "make": "OPPO", "model": "OPPO Find X8", "sw": "ColorOS 15", "cam": [
+          ["R", "主摄", "OPPO Find X8 back camera 5.21mm f/1.8", 23, 1.8, "1/1.56in Sony LYT-700 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "OPPO Find X8 back camera 2.24mm f/2.0", 15, 2.0, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "OPPO Find X8 back camera 20.7mm f/2.6", 73, 2.6, "1/1.95in Sony LYT-600 50MP", 200, "auto", "1/250"],
+          ["F", "前置", "OPPO Find X8 front camera 4.0mm f/2.4", 24, 2.4, "1/2.76in IMX709 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "oppo-find-x8-pro", "n": "OPPO Find X8 Pro", "y": 2024, "make": "OPPO", "model": "OPPO Find X8 Pro", "sw": "ColorOS 15", "cam": [
+          ["R", "主摄", "OPPO Find X8 Pro back camera 5.21mm f/1.6", 23, 1.6, "1/1.4in Sony LYT-808 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "OPPO Find X8 Pro back camera 2.24mm f/2.0", 15, 2.0, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "OPPO Find X8 Pro back camera 20.7mm f/2.6", 73, 2.6, "1/1.95in Sony LYT-600 50MP", 200, "auto", "1/250"],
+          ["R", "超长焦", "OPPO Find X8 Pro back camera 22.5mm f/4.3", 135, 4.3, "1/2.51in Sony IMX858 50MP", 400, "auto", "1/320"],
+          ["F", "前置", "OPPO Find X8 Pro front camera 4.0mm f/2.4", 24, 2.4, "1/2.76in IMX709 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "oppo-find-x8-ultra", "n": "OPPO Find X8 Ultra", "y": 2025, "make": "OPPO", "model": "OPPO Find X8 Ultra", "sw": "ColorOS 15", "cam": [
+          ["R", "主摄", "OPPO Find X8 Ultra back camera 6.5mm f/1.8", 23, 1.8, "1.0in Sony LYT-900 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "OPPO Find X8 Ultra back camera 2.24mm f/2.0", 15, 2.0, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "OPPO Find X8 Ultra back camera 19.4mm f/2.1", 70, 2.1, "1/1.56in Sony IMX906 50MP", 160, "auto", "1/200"],
+          ["R", "超长焦", "OPPO Find X8 Ultra back camera 22.5mm f/3.1", 135, 3.1, "1/2.51in Sony IMX882 50MP", 320, "auto", "1/320"],
+          ["F", "前置", "OPPO Find X8 Ultra front camera 4.0mm f/2.4", 24, 2.4, "1/2.76in IMX709 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "oppo-find-x9", "n": "OPPO Find X9", "y": 2025, "make": "OPPO", "model": "OPPO Find X9", "sw": "ColorOS 16", "cam": [
+          ["R", "主摄", "OPPO Find X9 back camera 5.21mm f/1.6", 23, 1.6, "1/1.56in Sony LYT-700 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "OPPO Find X9 back camera 2.24mm f/2.0", 15, 2.0, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "OPPO Find X9 back camera 20.7mm f/2.7", 73, 2.7, "1/1.4in Samsung HP5 200MP", 200, "auto", "1/250"],
+          ["F", "前置", "OPPO Find X9 front camera 4.0mm f/2.4", 24, 2.4, "1/2.76in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "oppo-find-x9-pro", "n": "OPPO Find X9 Pro", "y": 2025, "make": "OPPO", "model": "OPPO Find X9 Pro", "sw": "ColorOS 16", "cam": [
+          ["R", "主摄", "OPPO Find X9 Pro back camera 5.21mm f/1.5", 23, 1.5, "1/1.28in Sony LYT-828 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "OPPO Find X9 Pro back camera 2.24mm f/2.0", 15, 2.0, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "OPPO Find X9 Pro back camera 26.5mm f/2.1", 85, 2.1, "1/1.4in Samsung HP5 200MP", 200, "auto", "1/250"],
+          ["F", "前置", "OPPO Find X9 Pro front camera 4.0mm f/2.4", 24, 2.4, "1/2.76in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "oppo-reno13", "n": "OPPO Reno13", "y": 2024, "make": "OPPO", "model": "OPPO Reno13", "sw": "ColorOS 15", "cam": [
+          ["R", "主摄", "OPPO Reno13 back camera 5.4mm f/1.8", 26, 1.8, "1/1.95in Sony LYT-600 50MP", 125, "auto", "1/120"],
+          ["R", "超广角", "OPPO Reno13 back camera 1.6mm f/2.2", 16, 2.2, "1/4.0in 8MP", 500, "auto", "1/160"],
+          ["F", "前置", "OPPO Reno13 front camera 4.0mm f/2.0", 24, 2.0, "1/2.76in 50MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "oppo-reno14", "n": "OPPO Reno14", "y": 2025, "make": "OPPO", "model": "OPPO Reno14", "sw": "ColorOS 15", "cam": [
+          ["R", "主摄", "OPPO Reno14 back camera 5.4mm f/1.8", 26, 1.8, "1/1.56in Sony LYT-700 50MP", 125, "auto", "1/120"],
+          ["R", "超广角", "OPPO Reno14 back camera 1.6mm f/2.2", 16, 2.2, "1/4.0in 8MP", 500, "auto", "1/160"],
+          ["R", "长焦", "OPPO Reno14 back camera 15.3mm f/2.8", 80, 2.8, "1/2.76in 50MP", 250, "auto", "1/250"],
+          ["F", "前置", "OPPO Reno14 front camera 4.0mm f/2.0", 24, 2.0, "1/2.76in 50MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "oppo-a5-pro", "n": "OPPO A5 Pro", "y": 2025, "make": "OPPO", "model": "OPPO A5 Pro", "sw": "ColorOS 15", "cam": [
+          ["R", "主摄", "OPPO A5 Pro back camera 5.4mm f/1.79", 26, 1.79, "1/2.88in 50MP", 160, "auto", "1/120"],
+          ["R", "虚化", "OPPO A5 Pro back camera 1.8mm f/2.4", 22, 2.4, "1/5.0in 2MP", 800, "auto", "1/60"],
+          ["F", "前置", "OPPO A5 Pro front camera 3.6mm f/2.2", 24, 2.2, "1/4.0in 16MP", 500, "auto", "1/60"]
+        ]},
+        {"id": "oppo-k13", "n": "OPPO K13 Turbo", "y": 2025, "make": "OPPO", "model": "OPPO K13 Turbo", "sw": "ColorOS 15", "cam": [
+          ["R", "主摄", "OPPO K13 Turbo back camera 5.4mm f/1.8", 26, 1.8, "1/1.95in Sony LYT-600 50MP", 125, "auto", "1/120"],
+          ["R", "虚化", "OPPO K13 Turbo back camera 1.8mm f/2.4", 22, 2.4, "1/5.0in 2MP", 800, "auto", "1/60"],
+          ["F", "前置", "OPPO K13 Turbo front camera 3.6mm f/2.2", 24, 2.2, "1/4.0in 16MP", 500, "auto", "1/60"]
+        ]}
+      ]
+    },
+    {
+      "id": "iqoo",
+      "name": "iQOO",
+      "zh": "iQOO",
+      "devices": [
+        {"id": "iqoo-13", "n": "iQOO 13", "y": 2024, "make": "vivo", "model": "iQOO 13", "sw": "OriginOS 5", "cam": [
+          ["R", "主摄", "iQOO 13 back camera 5.21mm f/1.88", 23, 1.88, "1/1.56in Sony IMX921 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "iQOO 13 back camera 2.24mm f/2.0", 15, 2.0, "1/2.76in Samsung JN1 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "iQOO 13 back camera 8.7mm f/1.85", 47, 1.85, "1/2.93in Sony IMX816 50MP", 200, "auto", "1/250"],
+          ["F", "前置", "iQOO 13 front camera 3.2mm f/2.45", 24, 2.45, "1/3.1in 16MP", 500, "auto", "1/60"]
+        ]},
+        {"id": "iqoo-15", "n": "iQOO 15", "y": 2025, "make": "vivo", "model": "iQOO 15", "sw": "OriginOS 6", "cam": [
+          ["R", "主摄", "iQOO 15 back camera 5.21mm f/1.88", 23, 1.88, "1/1.56in Sony LYT-700 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "iQOO 15 back camera 2.24mm f/2.0", 15, 2.0, "1/2.76in Samsung JN1 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "iQOO 15 back camera 20.7mm f/2.65", 73, 2.65, "1/1.95in Sony IMX882 50MP", 200, "auto", "1/250"],
+          ["F", "前置", "iQOO 15 front camera 4.0mm f/2.0", 24, 2.0, "1/3.1in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "iqoo-neo10", "n": "iQOO Neo10", "y": 2024, "make": "vivo", "model": "iQOO Neo10", "sw": "OriginOS 5", "cam": [
+          ["R", "主摄", "iQOO Neo10 back camera 5.21mm f/1.88", 23, 1.88, "1/1.56in Sony IMX921 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "iQOO Neo10 back camera 1.6mm f/2.2", 16, 2.2, "1/4.0in 8MP", 500, "auto", "1/160"],
+          ["F", "前置", "iQOO Neo10 front camera 3.2mm f/2.45", 24, 2.45, "1/3.1in 16MP", 500, "auto", "1/60"]
+        ]},
+        {"id": "iqoo-neo10-pro", "n": "iQOO Neo10 Pro", "y": 2024, "make": "vivo", "model": "iQOO Neo10 Pro", "sw": "OriginOS 5", "cam": [
+          ["R", "主摄", "iQOO Neo10 Pro back camera 5.21mm f/1.88", 23, 1.88, "1/1.56in Sony IMX921 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "iQOO Neo10 Pro back camera 1.6mm f/2.2", 16, 2.2, "1/4.0in 8MP", 500, "auto", "1/160"],
+          ["F", "前置", "iQOO Neo10 Pro front camera 3.2mm f/2.45", 24, 2.45, "1/3.1in 16MP", 500, "auto", "1/60"]
+        ]},
+        {"id": "iqoo-neo11", "n": "iQOO Neo11", "y": 2025, "make": "vivo", "model": "iQOO Neo11", "sw": "OriginOS 6", "cam": [
+          ["R", "主摄", "iQOO Neo11 back camera 5.21mm f/1.88", 23, 1.88, "1/1.56in Sony LYT-700 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "iQOO Neo11 back camera 1.6mm f/2.2", 16, 2.2, "1/4.0in 8MP", 500, "auto", "1/160"],
+          ["F", "前置", "iQOO Neo11 front camera 4.0mm f/2.0", 24, 2.0, "1/3.1in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "iqoo-z9-turbo-plus", "n": "iQOO Z9 Turbo+", "y": 2024, "make": "vivo", "model": "iQOO Z9 Turbo+", "sw": "OriginOS 6", "cam": [
+          ["R", "主摄", "iQOO Z9 Turbo+ back camera 5.4mm f/1.79", 26, 1.79, "1/1.95in Sony LYT-600 50MP", 125, "auto", "1/120"],
+          ["R", "虚化", "iQOO Z9 Turbo+ back camera 1.8mm f/2.4", 22, 2.4, "1/5.0in 2MP", 800, "auto", "1/60"],
+          ["F", "前置", "iQOO Z9 Turbo+ front camera 3.2mm f/2.45", 24, 2.45, "1/3.1in 16MP", 500, "auto", "1/60"]
+        ]},
+        {"id": "iqoo-z10-turbo", "n": "iQOO Z10 Turbo+", "y": 2025, "make": "vivo", "model": "iQOO Z10 Turbo+", "sw": "OriginOS 6", "cam": [
+          ["R", "主摄", "iQOO Z10 Turbo+ back camera 5.4mm f/1.79", 26, 1.79, "1/1.95in Sony LYT-600 50MP", 125, "auto", "1/120"],
+          ["R", "虚化", "iQOO Z10 Turbo+ back camera 1.8mm f/2.4", 22, 2.4, "1/5.0in 2MP", 800, "auto", "1/60"],
+          ["F", "前置", "iQOO Z10 Turbo+ front camera 4.0mm f/2.0", 24, 2.0, "1/3.1in 32MP", 400, "auto", "1/60"]
+        ]}
+      ]
+    },
+    {
+      "id": "xiaomi",
+      "name": "Xiaomi",
+      "zh": "小米",
+      "devices": [
+        {"id": "xiaomi-15", "n": "Xiaomi 15", "y": 2024, "make": "Xiaomi", "model": "Xiaomi 15", "sw": "HyperOS 2.0", "cam": [
+          ["R", "主摄", "Xiaomi 15 back camera 6.6mm f/1.62", 23, 1.62, "1/1.31in OmniVision OV50H 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Xiaomi 15 back camera 2.1mm f/2.2", 14, 2.2, "1/2.76in Samsung JN1 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "Xiaomi 15 back camera 8.6mm f/2.0", 60, 2.0, "1/2.76in Samsung JN5 50MP", 200, "auto", "1/250"],
+          ["F", "前置", "Xiaomi 15 front camera 3.6mm f/2.0", 24, 2.0, "1/3.14in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "xiaomi-15-pro", "n": "Xiaomi 15 Pro", "y": 2024, "make": "Xiaomi", "model": "Xiaomi 15 Pro", "sw": "HyperOS 2.0", "cam": [
+          ["R", "主摄", "Xiaomi 15 Pro back camera 5.4mm f/1.44", 23, 1.44, "1.0in Sony LYT-900 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Xiaomi 15 Pro back camera 2.1mm f/2.2", 14, 2.2, "1/2.76in Samsung JN1 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "Xiaomi 15 Pro back camera 17.9mm f/2.5", 120, 2.5, "1/2.51in Sony IMX858 50MP", 250, "auto", "1/250"],
+          ["F", "前置", "Xiaomi 15 Pro front camera 3.6mm f/2.0", 24, 2.0, "1/3.14in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "xiaomi-15-ultra", "n": "Xiaomi 15 Ultra", "y": 2025, "make": "Xiaomi", "model": "Xiaomi 15 Ultra", "sw": "HyperOS 2.0", "cam": [
+          ["R", "主摄", "Xiaomi 15 Ultra back camera 5.4mm f/1.63", 23, 1.63, "1.0in Sony LYT-900 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Xiaomi 15 Ultra back camera 2.1mm f/2.2", 14, 2.2, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "Xiaomi 15 Ultra back camera 10.5mm f/1.8", 70, 1.8, "1/2.51in Sony IMX858 50MP", 160, "auto", "1/200"],
+          ["R", "超长焦", "Xiaomi 15 Ultra back camera 19.4mm f/2.6", 100, 2.6, "1/1.4in Samsung HP9 200MP", 320, "auto", "1/320"],
+          ["F", "前置", "Xiaomi 15 Ultra front camera 3.6mm f/2.0", 24, 2.0, "1/3.14in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "xiaomi-17", "n": "Xiaomi 17", "y": 2025, "make": "Xiaomi", "model": "Xiaomi 17", "sw": "HyperOS 3.0", "cam": [
+          ["R", "主摄", "Xiaomi 17 back camera 6.6mm f/1.6", 23, 1.6, "1/1.31in OmniVision OV50Q 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Xiaomi 17 back camera 2.55mm f/2.2", 17, 2.2, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "Xiaomi 17 back camera 8.6mm f/2.0", 60, 2.0, "1/2.76in Samsung JN5 50MP", 200, "auto", "1/250"],
+          ["F", "前置", "Xiaomi 17 front camera 3.6mm f/2.0", 24, 2.0, "1/3.14in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "xiaomi-17-pro", "n": "Xiaomi 17 Pro", "y": 2025, "make": "Xiaomi", "model": "Xiaomi 17 Pro", "sw": "HyperOS 3.0", "cam": [
+          ["R", "主摄", "Xiaomi 17 Pro back camera 5.4mm f/1.62", 23, 1.62, "1/1.28in Sony LYT-828 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Xiaomi 17 Pro back camera 2.55mm f/2.2", 17, 2.2, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "Xiaomi 17 Pro back camera 14.2mm f/2.1", 100, 2.1, "1/1.4in Samsung HP9 200MP", 250, "auto", "1/250"],
+          ["F", "前置", "Xiaomi 17 Pro front camera 3.6mm f/2.0", 24, 2.0, "1/3.14in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "xiaomi-17-pro-max", "n": "Xiaomi 17 Pro Max", "y": 2025, "make": "Xiaomi", "model": "Xiaomi 17 Pro Max", "sw": "HyperOS 3.0", "cam": [
+          ["R", "主摄", "Xiaomi 17 Pro Max back camera 5.4mm f/1.62", 23, 1.62, "1/1.28in Sony LYT-828 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Xiaomi 17 Pro Max back camera 2.55mm f/2.2", 17, 2.2, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "Xiaomi 17 Pro Max back camera 8.6mm f/2.0", 60, 2.0, "1/1.95in 50MP", 200, "auto", "1/250"],
+          ["R", "超长焦", "Xiaomi 17 Pro Max back camera 19.4mm f/2.6", 100, 2.6, "1/1.4in Samsung HP9 200MP", 250, "auto", "1/320"],
+          ["F", "前置", "Xiaomi 17 Pro Max front camera 3.6mm f/2.0", 24, 2.0, "1/3.14in 32MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "xiaomi-civi5-pro", "n": "Xiaomi Civi 5 Pro", "y": 2025, "make": "Xiaomi", "model": "Xiaomi Civi 5 Pro", "sw": "HyperOS 2.0", "cam": [
+          ["R", "主摄", "Xiaomi Civi 5 Pro back camera 6.6mm f/1.63", 23, 1.63, "1/1.31in OmniVision OV50H 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Xiaomi Civi 5 Pro back camera 2.1mm f/2.2", 14, 2.2, "1/2.76in 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "Xiaomi Civi 5 Pro back camera 8.6mm f/2.0", 60, 2.0, "1/2.76in 50MP", 200, "auto", "1/250"],
+          ["F", "前置", "Xiaomi Civi 5 Pro front camera 3.6mm f/2.0", 24, 2.0, "1/2.76in 50MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "xiaomi-mix-flip-2", "n": "Xiaomi MIX Flip 2", "y": 2025, "make": "Xiaomi", "model": "Xiaomi MIX Flip 2", "sw": "HyperOS 2.0", "cam": [
+          ["R", "主摄", "Xiaomi MIX Flip 2 back camera 6.6mm f/1.63", 23, 1.63, "1/1.55in 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Xiaomi MIX Flip 2 back camera 2.1mm f/2.2", 14, 2.2, "1/3.0in 50MP", 320, "auto", "1/160"],
+          ["F", "前置", "Xiaomi MIX Flip 2 front camera 3.6mm f/2.0", 24, 2.0, "1/3.14in 32MP", 400, "auto", "1/60"]
+        ]}
+      ]
+    },
+    {
+      "id": "redmi",
+      "name": "Redmi",
+      "zh": "红米",
+      "devices": [
+        {"id": "redmi-k80", "n": "Redmi K80", "y": 2024, "make": "Xiaomi", "model": "Redmi K80", "sw": "HyperOS 2.0", "cam": [
+          ["R", "主摄", "Redmi K80 back camera 5.4mm f/1.6", 26, 1.6, "1/1.55in OmniVision OV50E 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Redmi K80 back camera 1.6mm f/2.2", 16, 2.2, "1/4.0in 8MP", 500, "auto", "1/160"],
+          ["F", "前置", "Redmi K80 front camera 3.2mm f/2.2", 24, 2.2, "1/3.4in 20MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "redmi-k80-pro", "n": "Redmi K80 Pro", "y": 2024, "make": "Xiaomi", "model": "Redmi K80 Pro", "sw": "HyperOS 2.0", "cam": [
+          ["R", "主摄", "Redmi K80 Pro back camera 5.21mm f/1.6", 23, 1.6, "1/1.4in Sony LYT-800 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Redmi K80 Pro back camera 2.24mm f/2.2", 15, 2.2, "1/2.76in Samsung JN1 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "Redmi K80 Pro back camera 12.3mm f/2.0", 60, 2.0, "1/2.76in Samsung JN5 50MP", 200, "auto", "1/250"],
+          ["F", "前置", "Redmi K80 Pro front camera 3.2mm f/2.2", 24, 2.2, "1/3.4in 20MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "redmi-k90", "n": "Redmi K90", "y": 2025, "make": "Xiaomi", "model": "Redmi K90", "sw": "HyperOS 3.0", "cam": [
+          ["R", "主摄", "Redmi K90 back camera 5.21mm f/1.6", 23, 1.6, "1/1.56in Sony LYT-700 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Redmi K90 back camera 2.24mm f/2.2", 15, 2.2, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "Redmi K90 back camera 8.6mm f/2.0", 50, 2.0, "1/2.76in 50MP", 200, "auto", "1/250"],
+          ["F", "前置", "Redmi K90 front camera 3.2mm f/2.2", 24, 2.2, "1/3.4in 20MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "redmi-k90-pro-max", "n": "Redmi K90 Pro Max", "y": 2025, "make": "Xiaomi", "model": "Redmi K90 Pro Max", "sw": "HyperOS 3.0", "cam": [
+          ["R", "主摄", "Redmi K90 Pro Max back camera 5.21mm f/1.6", 23, 1.6, "1/1.28in Sony LYT-828 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Redmi K90 Pro Max back camera 2.24mm f/2.2", 15, 2.2, "1/2.76in Samsung JN5 50MP", 320, "auto", "1/160"],
+          ["R", "长焦", "Redmi K90 Pro Max back camera 22.2mm f/2.6", 115, 2.6, "1/1.95in 50MP", 250, "auto", "1/320"],
+          ["F", "前置", "Redmi K90 Pro Max front camera 3.2mm f/2.2", 24, 2.2, "1/3.4in 20MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "redmi-turbo-4", "n": "Redmi Turbo 4", "y": 2025, "make": "Xiaomi", "model": "Redmi Turbo 4", "sw": "HyperOS 2.0", "cam": [
+          ["R", "主摄", "Redmi Turbo 4 back camera 5.4mm f/1.8", 26, 1.8, "1/1.95in Sony LYT-600 50MP", 125, "auto", "1/120"],
+          ["R", "虚化", "Redmi Turbo 4 back camera 1.8mm f/2.4", 22, 2.4, "1/5.0in 2MP", 800, "auto", "1/60"],
+          ["F", "前置", "Redmi Turbo 4 front camera 3.2mm f/2.2", 24, 2.2, "1/3.4in 20MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "redmi-turbo-4-pro", "n": "Redmi Turbo 4 Pro", "y": 2025, "make": "Xiaomi", "model": "Redmi Turbo 4 Pro", "sw": "HyperOS 2.0", "cam": [
+          ["R", "主摄", "Redmi Turbo 4 Pro back camera 5.4mm f/1.8", 26, 1.8, "1/1.95in Sony LYT-600 50MP", 125, "auto", "1/120"],
+          ["R", "超广角", "Redmi Turbo 4 Pro back camera 1.6mm f/2.2", 16, 2.2, "1/4.0in 8MP", 500, "auto", "1/160"],
+          ["F", "前置", "Redmi Turbo 4 Pro front camera 3.2mm f/2.2", 24, 2.2, "1/3.4in 20MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "redmi-note14-pro", "n": "Redmi Note 14 Pro", "y": 2024, "make": "Xiaomi", "model": "Redmi Note 14 Pro", "sw": "HyperOS 2.0", "cam": [
+          ["R", "主摄", "Redmi Note 14 Pro back camera 5.4mm f/1.6", 26, 1.6, "1/1.55in OmniVision OV50E 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Redmi Note 14 Pro back camera 1.6mm f/2.2", 16, 2.2, "1/4.0in 8MP", 500, "auto", "1/160"],
+          ["R", "微距", "Redmi Note 14 Pro back camera 1.8mm f/2.4", 22, 2.4, "1/5.0in 2MP", 800, "auto", "1/60"],
+          ["F", "前置", "Redmi Note 14 Pro front camera 3.2mm f/2.2", 24, 2.2, "1/3.4in 20MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "redmi-note15-pro", "n": "Redmi Note 15 Pro", "y": 2025, "make": "Xiaomi", "model": "Redmi Note 15 Pro", "sw": "HyperOS 3.0", "cam": [
+          ["R", "主摄", "Redmi Note 15 Pro back camera 5.4mm f/1.6", 26, 1.6, "1/1.56in Sony LYT-700 50MP", 100, "auto", "1/120"],
+          ["R", "超广角", "Redmi Note 15 Pro back camera 1.6mm f/2.2", 16, 2.2, "1/4.0in 8MP", 500, "auto", "1/160"],
+          ["R", "长焦", "Redmi Note 15 Pro back camera 8.7mm f/2.4", 50, 2.4, "1/2.76in 50MP", 200, "auto", "1/200"],
+          ["F", "前置", "Redmi Note 15 Pro front camera 3.2mm f/2.2", 24, 2.2, "1/3.4in 20MP", 400, "auto", "1/60"]
+        ]},
+        {"id": "redmi-15c", "n": "Redmi 15C", "y": 2025, "make": "Xiaomi", "model": "Redmi 15C", "sw": "HyperOS 2.0", "cam": [
+          ["R", "主摄", "Redmi 15C back camera 3.6mm f/1.8", 26, 1.8, "1/2.96in 50MP", 160, "auto", "1/120"],
+          ["R", "虚化", "Redmi 15C back camera 1.8mm f/2.4", 22, 2.4, "1/5.0in 2MP", 800, "auto", "1/60"],
+          ["F", "前置", "Redmi 15C front camera 2.8mm f/2.2", 26, 2.2, "1/4.0in 8MP", 500, "auto", "1/60"]
+        ]}
+      ]
+    }
+  ]
+}
