@@ -55,6 +55,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.lucifer.exifstudio.R
+import com.lucifer.exifstudio.data.GeoProvider
+import com.lucifer.exifstudio.data.GeoResult
 import com.lucifer.exifstudio.data.MapTiles
 import com.lucifer.exifstudio.data.Place
 import com.lucifer.exifstudio.vm.StudioViewModel
@@ -69,8 +71,7 @@ import java.util.Locale
 
 /**
  * 地图选点。
- * 交互：长按地图落点 → 逆地理编码出地址 → 「使用此位置」把 WGS-84 经纬度写进 EXIF。
- * 坐标双向转换：高德瓦片是 GCJ-02，EXIF 必须是 WGS-84。
+ * 长按地图落点 / 搜索框检索后自动跳转，最终把 WGS-84 经纬度写进 EXIF。
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -87,6 +88,8 @@ fun MapPickerScreen(
 
     var tileKind by remember { mutableStateOf(vm.tileKind) }
     var customUrl by remember { mutableStateOf(vm.customTileUrl) }
+    var provider by remember { mutableStateOf(vm.geoProvider) }
+    var amapKey by remember { mutableStateOf(vm.amapKey) }
 
     var lat by remember { mutableStateOf(initialLat ?: 39.9087) }
     var lon by remember { mutableStateOf(initialLon ?: 116.3975) }
@@ -96,7 +99,8 @@ fun MapPickerScreen(
     var results by remember { mutableStateOf<List<Place>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
     var showResults by remember { mutableStateOf(false) }
-    var showTileSheet by remember { mutableStateOf(false) }
+    var searchError by remember { mutableStateOf("") }
+    var showSourceSheet by remember { mutableStateOf(false) }
     var showCoordEdit by remember { mutableStateOf(false) }
 
     val mapView = remember {
@@ -127,6 +131,7 @@ fun MapPickerScreen(
                     val wgs = MapTiles.toWgs(tileKind, p.latitude, p.longitude)
                     lat = wgs[0]
                     lon = wgs[1]
+                    searchError = ""
                 }
                 return true
             }
@@ -163,24 +168,43 @@ fun MapPickerScreen(
         }
     }
 
+    fun jumpTo(place: Place) {
+        lat = place.lat
+        lon = place.lon
+        address = place.subtitle
+        val g = MapTiles.toMap(tileKind, place.lat, place.lon)
+        mapView.controller.setZoom(16.0)
+        mapView.controller.animateTo(GeoPoint(g[0], g[1]))
+    }
+
     fun doSearch() {
         val q = query.trim()
-        if (q.isEmpty()) return
+        if (q.isEmpty()) {
+            searchError = "先输入地名，比如「外滩」「西湖」"
+            return
+        }
         focusManager.clearFocus()
+        showResults = false
         scope.launch {
             searching = true
-            val list = runCatching { vm.searchPlaces(q) }.getOrDefault(emptyList())
-            results = list
-            showResults = list.isNotEmpty()
+            searchError = ""
+            val res = runCatching { vm.searchPlaces(q) }
+                .getOrElse { GeoResult.Fail(it.message ?: "检索失败") }
             searching = false
-            // 搜索命中：地图小窗口自动跳到该地点
-            list.firstOrNull()?.let { place ->
-                lat = place.lat
-                lon = place.lon
-                address = place.subtitle
-                val g = MapTiles.toMap(tileKind, place.lat, place.lon)
-                mapView.controller.setZoom(16.0)
-                mapView.controller.animateTo(GeoPoint(g[0], g[1]))
+            when (res) {
+                is GeoResult.Ok -> {
+                    if (res.places.isEmpty()) {
+                        searchError = "没找到「$q」，换个关键词或更上级的地名试试"
+                    } else {
+                        results = res.places
+                        showResults = true
+                        jumpTo(res.places.first())
+                    }
+                }
+
+                is GeoResult.Fail -> {
+                    searchError = res.message + "（可在右侧「地图源」里切换检索服务）"
+                }
             }
         }
     }
@@ -207,16 +231,24 @@ fun MapPickerScreen(
                         .weight(1f)
                         .height(50.dp)
                         .glass(Tok.RButton)
-                        .padding(horizontal = 14.dp),
+                        .padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.Rounded.Search,
-                        contentDescription = null,
-                        tint = Tok.Text3,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(10.dp))
+                    Box(
+                        Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .clickable { doSearch() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Rounded.Search,
+                            contentDescription = "搜索",
+                            tint = Tok.Text2,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(2.dp))
                     Box(Modifier.weight(1f)) {
                         if (query.isEmpty()) {
                             Text(
@@ -227,7 +259,10 @@ fun MapPickerScreen(
                         }
                         BasicTextField(
                             value = query,
-                            onValueChange = { query = it },
+                            onValueChange = {
+                                query = it
+                                searchError = ""
+                            },
                             singleLine = true,
                             textStyle = MaterialTheme.typography.bodyLarge.copy(color = Tok.Text1),
                             cursorBrush = SolidColor(Tok.Accent2),
@@ -242,19 +277,27 @@ fun MapPickerScreen(
                             strokeWidth = 2.dp,
                             color = Tok.Accent2
                         )
+                        Spacer(Modifier.width(6.dp))
                     } else if (query.isNotEmpty()) {
-                        Icon(
-                            Icons.Rounded.Close,
-                            contentDescription = "清除",
-                            tint = Tok.Text3,
-                            modifier = Modifier
-                                .size(18.dp)
+                        Box(
+                            Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
                                 .clickable {
                                     query = ""
                                     results = emptyList()
                                     showResults = false
-                                }
-                        )
+                                    searchError = ""
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Rounded.Close,
+                                contentDescription = "清除",
+                                tint = Tok.Text3,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
                 Spacer(Modifier.width(8.dp))
@@ -262,7 +305,7 @@ fun MapPickerScreen(
                     Modifier
                         .size(50.dp)
                         .glass(Tok.RButton)
-                        .clickable { showTileSheet = true },
+                        .clickable { showSourceSheet = true },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -274,13 +317,29 @@ fun MapPickerScreen(
                 }
             }
 
+            if (searchError.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .glass(Tok.RInner)
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                ) {
+                    Text(
+                        searchError,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Tok.Danger
+                    )
+                }
+            }
+
             if (showResults) {
                 Column(
                     Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                         .glass(Tok.RInner)
-                        .heightIn(max = 280.dp)
+                        .heightIn(max = 260.dp)
                 ) {
                     LazyColumn {
                         items(results) { place ->
@@ -288,15 +347,10 @@ fun MapPickerScreen(
                                 Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        lat = place.lat
-                                        lon = place.lon
-                                        address = place.subtitle
+                                        jumpTo(place)
                                         query = place.title
                                         showResults = false
                                         focusManager.clearFocus()
-                                        val g = MapTiles.toMap(tileKind, place.lat, place.lon)
-                                        mapView.controller.setZoom(16.0)
-                                        mapView.controller.animateTo(GeoPoint(g[0], g[1]))
                                     }
                                     .padding(horizontal = 16.dp, vertical = 12.dp)
                             ) {
@@ -388,7 +442,6 @@ fun MapPickerScreen(
             )
         }
 
-        // 返回
         Box(
             Modifier
                 .align(Alignment.TopStart)
@@ -408,17 +461,24 @@ fun MapPickerScreen(
         }
     }
 
-    if (showTileSheet) {
-        TileSourceSheet(
+    if (showSourceSheet) {
+        MapSourceSheet(
             kind = tileKind,
             customUrl = customUrl,
-            onDismiss = { showTileSheet = false },
-            onApply = { kind, url ->
-                tileKind = kind
+            provider = provider,
+            amapKey = amapKey,
+            onDismiss = { showSourceSheet = false },
+            onApply = { k, url, prov, key ->
+                tileKind = k
                 customUrl = url
-                vm.tileKind = kind
+                provider = prov
+                amapKey = key
+                vm.tileKind = k
                 vm.customTileUrl = url
-                showTileSheet = false
+                vm.geoProvider = prov
+                vm.amapKey = key
+                showSourceSheet = false
+                searchError = ""
             }
         )
     }
@@ -442,14 +502,18 @@ fun MapPickerScreen(
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun TileSourceSheet(
+private fun MapSourceSheet(
     kind: String,
     customUrl: String,
+    provider: String,
+    amapKey: String,
     onDismiss: () -> Unit,
-    onApply: (String, String) -> Unit
+    onApply: (String, String, String, String) -> Unit
 ) {
     var selected by remember { mutableStateOf(kind) }
     var url by remember { mutableStateOf(customUrl) }
+    var prov by remember { mutableStateOf(provider) }
+    var key by remember { mutableStateOf(amapKey) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
@@ -458,58 +522,51 @@ private fun TileSourceSheet(
         containerColor = Tok.Bg1,
         scrimColor = Tok.Bg0.copy(alpha = 0.6f)
     ) {
-        Column(Modifier.padding(horizontal = Tok.Page, vertical = Tok.S)) {
-            Text("地图源", style = MaterialTheme.typography.titleLarge, color = Tok.Text1)
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "高德瓦片免密钥、中文标注最全；OSM 为国际标准坐标；自建可填自己的瓦片服务。",
-                style = MaterialTheme.typography.bodySmall,
-                color = Tok.Text3
-            )
-            Spacer(Modifier.height(16.dp))
+        Column(
+            Modifier
+                .padding(horizontal = Tok.Page, vertical = Tok.S)
+                .heightIn(max = 640.dp)
+        ) {
+            Text("地图与检索源", style = MaterialTheme.typography.titleLarge, color = Tok.Text1)
+            Spacer(Modifier.height(14.dp))
+
+            Text("地图瓦片", style = MaterialTheme.typography.labelLarge, color = Tok.Text2)
+            Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Pill("高德", selected == MapTiles.GAODE) { selected = MapTiles.GAODE }
                 Pill("OSM", selected == MapTiles.OSM) { selected = MapTiles.OSM }
                 Pill("自建", selected == MapTiles.CUSTOM) { selected = MapTiles.CUSTOM }
             }
             if (selected == MapTiles.CUSTOM) {
-                Spacer(Modifier.height(14.dp))
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .glass(Tok.RInner)
-                        .padding(horizontal = 14.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    if (url.isEmpty()) {
-                        Text(
-                            "https://your.server/tiles/{z}/{x}/{y}.png",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Tok.Text4
-                        )
-                    }
-                    BasicTextField(
-                        value = url,
-                        onValueChange = { url = it },
-                        singleLine = true,
-                        textStyle = Mono.copy(color = Tok.Text1),
-                        cursorBrush = SolidColor(Tok.Accent2),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    "支持 {z}/{x}/{y} 占位符，兼容 XYZ 规范的离线/自建服务",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Tok.Text4
-                )
+                Spacer(Modifier.height(10.dp))
+                GlassField("https://your.server/tiles/{z}/{x}/{y}.png", url, { url = it })
             }
+
+            Spacer(Modifier.height(18.dp))
+            Text("地名检索", style = MaterialTheme.typography.labelLarge, color = Tok.Text2)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "国内网络下 OSM 经常超时，填一个高德 Web 服务 Key 会准很多（高德开放平台免费申请）",
+                style = MaterialTheme.typography.bodySmall,
+                color = Tok.Text3
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Pill("自动", prov == GeoProvider.AUTO) { prov = GeoProvider.AUTO }
+                Pill("OSM", prov == GeoProvider.OSM) { prov = GeoProvider.OSM }
+                Pill("Photon", prov == GeoProvider.PHOTON) { prov = GeoProvider.PHOTON }
+                Pill("高德", prov == GeoProvider.AMAP) { prov = GeoProvider.AMAP }
+            }
+            if (prov == GeoProvider.AUTO || prov == GeoProvider.AMAP) {
+                Spacer(Modifier.height(10.dp))
+                GlassField("高德 Key（不填则走 OSM/Photon）", key, { key = it })
+            }
+
             Spacer(Modifier.height(20.dp))
             PrimaryButton(
                 text = "应用",
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { onApply(selected, url) }
+                onClick = { onApply(selected, url, prov, key.trim()) }
             )
             Spacer(Modifier.height(28.dp))
         }
