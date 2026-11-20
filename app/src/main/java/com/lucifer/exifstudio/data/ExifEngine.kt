@@ -35,7 +35,12 @@ object ExifEngine {
         return input.use {
             val ex = ExifInterface(it)
             val latLong = ex.latLong
-            val altitude = ex.getAltitude()
+            val hasAltitude = ex.getAttribute(ExifInterface.TAG_GPS_ALTITUDE) != null
+            val altitude = if (hasAltitude) {
+                runCatching { ex.getAltitude(0.0) }.getOrDefault(0.0)
+            } else {
+                null
+            }
             ExifProfile(
                 make = ex.getAttribute(ExifInterface.TAG_MAKE).orEmpty(),
                 model = ex.getAttribute(ExifInterface.TAG_MODEL).orEmpty(),
@@ -51,7 +56,7 @@ object ExifEngine {
                 dateTime = ex.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL).orEmpty(),
                 latitude = latLong?.getOrNull(0),
                 longitude = latLong?.getOrNull(1),
-                altitude = if (altitude.isNaN()) null else altitude,
+                altitude = altitude,
                 address = ex.getAttribute(ExifInterface.TAG_GPS_AREA_INFORMATION).orEmpty()
             )
         }
@@ -71,30 +76,38 @@ object ExifEngine {
 
     /** 把 [src] 复制成 [dst] 并覆盖 EXIF；返回是否成功落盘 */
     fun write(context: Context, src: Uri, profile: ExifProfile, dst: File): Boolean {
-        return runCatching {
+        return try {
             dst.parentFile?.mkdirs()
-            context.contentResolver.openInputStream(src)?.use { input ->
-                dst.outputStream().use { out -> input.copyTo(out, 128 * 1024) }
-            } ?: return false
+            val input = context.contentResolver.openInputStream(src) ?: return false
+            input.use { ins ->
+                dst.outputStream().use { out -> ins.copyTo(out, 128 * 1024) }
+            }
 
             val ex = ExifInterface(dst.absolutePath)
-            apply(ex, profile)
+            applyProfile(ex, profile)
             ex.saveAttributes()
-        }.getOrDefault(false)
+            true
+        } catch (t: Throwable) {
+            false
+        }
     }
 
-    private fun apply(ex: ExifInterface, p: ExifProfile) {
+    private fun applyProfile(ex: ExifInterface, p: ExifProfile) {
         if (p.make.isNotBlank()) ex.setAttribute(ExifInterface.TAG_MAKE, p.make)
         if (p.model.isNotBlank()) ex.setAttribute(ExifInterface.TAG_MODEL, p.model)
         if (p.software.isNotBlank()) ex.setAttribute(ExifInterface.TAG_SOFTWARE, p.software)
         if (p.lensModel.isNotBlank()) ex.setAttribute(ExifInterface.TAG_LENS_MODEL, p.lensModel)
         if (p.fNumber.isNotBlank()) ex.setAttribute(ExifInterface.TAG_F_NUMBER, p.fNumber)
-        if (p.exposureTime.isNotBlank()) ex.setAttribute(ExifInterface.TAG_EXPOSURE_TIME, p.exposureTime)
+        if (p.exposureTime.isNotBlank()) {
+            ex.setAttribute(ExifInterface.TAG_EXPOSURE_TIME, p.exposureTime)
+        }
         if (p.iso.isNotBlank()) {
             ex.setAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY, p.iso)
             ex.setAttribute(ExifInterface.TAG_ISO_SPEED_RATINGS, p.iso)
         }
-        if (p.focalLength.isNotBlank()) ex.setAttribute(ExifInterface.TAG_FOCAL_LENGTH, p.focalLength)
+        if (p.focalLength.isNotBlank()) {
+            ex.setAttribute(ExifInterface.TAG_FOCAL_LENGTH, p.focalLength)
+        }
         if (p.focal35.isNotBlank()) {
             ex.setAttribute(ExifInterface.TAG_FOCAL_LENGTH_IN_35MM_FILM, p.focal35)
             ex.setAttribute(ExifInterface.TAG_DIGITAL_ZOOM_RATIO, "1")
@@ -116,7 +129,7 @@ object ExifEngine {
             val lon = p.longitude!!
             ex.setLatLong(lat, lon)
             val alt = p.altitude ?: 0.0
-            ex.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, alt)
+            ex.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, alt.toString())
             ex.setAttribute(ExifInterface.TAG_GPS_ALTITUDE_REF, if (alt < 0) "1" else "0")
             ex.setAttribute(ExifInterface.TAG_GPS_PROCESSING_METHOD, "NETWORK")
             ex.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, gpsDateStamp())
@@ -142,17 +155,21 @@ object ExifEngine {
     // ---------- 清除 ----------
 
     /** 彻底去掉元数据（含 GPS）：重编码一份干净副本 */
-    fun stripAll(context: Context, src: Uri, dst: File): Boolean = runCatching {
-        dst.parentFile?.mkdirs()
-        val bitmap = context.contentResolver.openInputStream(src)?.use {
-            BitmapFactory.decodeStream(it)
-        } ?: return false
-        dst.outputStream().use { stream ->
-            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, stream)
+    fun stripAll(context: Context, src: Uri, dst: File): Boolean {
+        return try {
+            dst.parentFile?.mkdirs()
+            val bitmap = context.contentResolver.openInputStream(src)?.use {
+                BitmapFactory.decodeStream(it)
+            } ?: return false
+            dst.outputStream().use { stream ->
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, stream)
+            }
+            bitmap.recycle()
+            true
+        } catch (t: Throwable) {
+            false
         }
-        bitmap.recycle()
-        true
-    }.getOrDefault(false)
+    }
 
     // ---------- 工具 ----------
 
