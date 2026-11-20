@@ -14,8 +14,8 @@ android {
         minSdk = 29
         // Android 16/17 对新安装应用的 targetSdk 有下限要求，这里跟随当年平台
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.2.1"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -99,9 +99,17 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.9.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.2")
+
+    /**
+     * 注意：lifecycle 必须与 Compose 版本匹配。
+     * lifecycle-runtime-compose 2.8.x 的 collectAsStateWithLifecycle() 依赖
+     * Compose 1.7 新增的 androidx.lifecycle.compose.LocalLifecycleOwner，
+     * 而 Compose BOM 2024.06 的 compose-ui 是 1.6.8，没人提供那个 CompositionLocal，
+     * 一读就抛 "CompositionLocal LocalLifecycleOwner not present"。
+     * 因此这里锁定 2.7.0，并在 MainActivity 中改用 collectAsState()。
+     */
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
 
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
