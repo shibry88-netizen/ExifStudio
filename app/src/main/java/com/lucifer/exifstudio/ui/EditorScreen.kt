@@ -102,6 +102,16 @@ fun EditorScreen(
                                 .fillMaxSize()
                                 .clip(RoundedCornerShape(Tok.RCard))
                         )
+
+                        if (state.changedCount > 0) {
+                            Badge(
+                                text = "已改 ${state.changedCount} 项",
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(12.dp)
+                            )
+                        }
+
                         Box(
                             Modifier
                                 .align(Alignment.BottomStart)
@@ -158,13 +168,14 @@ fun EditorScreen(
                     ) {
                         KeyValueRow(
                             "光圈",
-                            if (profile.fNumber.isBlank()) "" else "f/${profile.fNumber}",
+                            if (profile.fNumber.isBlank()) "" else "F${profile.fNumber}",
+                            valueColor = Tok.Accent2,
                             onClick = { editFNumber = profile.fNumber }
                         )
                         DividerLine()
                         KeyValueRow(
                             "快门",
-                            if (profile.exposureTime.isBlank()) "" else "${profile.exposureTime}s",
+                            if (profile.exposureTime.isBlank()) "" else "${profile.exposureTime} s",
                             onClick = { editShutter = profile.exposureTime }
                         )
                         DividerLine()
@@ -253,7 +264,13 @@ fun EditorScreen(
                 .navigationBarsPadding()
                 .padding(horizontal = Tok.Page, vertical = Tok.L)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (state.changedCount > 0) {
+                    GhostButton(text = "重置", onClick = { vm.reset() })
+                }
                 Box(Modifier.weight(1f)) {
                     PrimaryButton(
                         text = if (state.busy) "处理中…" else "保存为新照片",
@@ -261,14 +278,6 @@ fun EditorScreen(
                         enabled = !state.busy,
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { vm.save() }
-                    )
-                }
-                if (state.busy) {
-                    Spacer(Modifier.size(12.dp))
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(22.dp),
-                        strokeWidth = 2.dp,
-                        color = Tok.Accent2
                     )
                 }
             }
