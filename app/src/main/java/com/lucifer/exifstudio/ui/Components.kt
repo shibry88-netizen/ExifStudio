@@ -1,6 +1,7 @@
 package com.lucifer.exifstudio.ui
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,7 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** 背景：深空黑 + 三团流动光斑，玻璃要透光才有质感 */
+/** 背景：深空黑 + 三团流动光斑。玻璃感由光决定，不由边框决定。 */
 @Composable
 fun AuroraBackground(content: @Composable BoxScope.() -> Unit) {
     Box(
@@ -52,9 +53,9 @@ fun AuroraBackground(content: @Composable BoxScope.() -> Unit) {
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Tok.Bg0, Tok.Bg1)))
     ) {
-        Blob(Tok.Accent.copy(alpha = 0.40f), 360.dp, (-140).dp, (-180).dp)
-        Blob(Tok.Accent2.copy(alpha = 0.22f), 300.dp, 190.dp, 60.dp)
-        Blob(Color(0xFF8B5CF6).copy(alpha = 0.16f), 340.dp, 40.dp, 520.dp)
+        Blob(Tok.Accent.copy(alpha = 0.68f), 380.dp, (-90).dp, (-40).dp)
+        Blob(Color(0xFF9678FF).copy(alpha = 0.38f), 340.dp, 200.dp, 120.dp)
+        Blob(Tok.Accent2.copy(alpha = 0.42f), 360.dp, (-60).dp, 520.dp)
         content()
     }
 }
@@ -65,7 +66,7 @@ private fun Blob(color: Color, size: Dp, x: Dp, y: Dp) {
         Modifier
             .offset(x = x, y = y)
             .size(size)
-            .blur(80.dp)
+            .blur(90.dp)
             .background(
                 Brush.radialGradient(listOf(color, color.copy(alpha = 0f))),
                 CircleShape
@@ -73,18 +74,29 @@ private fun Blob(color: Color, size: Dp, x: Dp, y: Dp) {
     )
 }
 
-/** 液态玻璃材质：底胚 + 顶部柔光 + 外细边 + 大而柔的投影 */
+/**
+ * 液态玻璃材质：
+ * 底胚（6% 白渐变）+ 顶部内高光 18% + 外 1px 8% 亮边 + 大而柔的环境投影。
+ */
 fun Modifier.glass(
     radius: Dp = Tok.RCard,
     tint: Color = Tok.Glass
 ): Modifier {
     val shape = RoundedCornerShape(radius)
     return this
-        .shadow(20.dp, shape, clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+        .shadow(
+            elevation = 24.dp,
+            shape = shape,
+            clip = false,
+            ambientColor = Color.Black,
+            spotColor = Color.Black
+        )
         .clip(shape)
         .background(
             Brush.verticalGradient(
-                listOf(tint.copy(alpha = 0.11f), tint.copy(alpha = 0.035f))
+                0f to tint.copy(alpha = 0.10f),
+                0.44f to tint.copy(alpha = 0.028f),
+                1f to tint.copy(alpha = 0.05f)
             )
         )
         .border(1.dp, Tok.Stroke, shape)
@@ -159,7 +171,7 @@ fun KeyValueRow(
         modifier.fillMaxWidth()
     }
     Row(
-        rowModifier.padding(horizontal = Tok.L, vertical = 11.dp),
+        rowModifier.padding(horizontal = Tok.L, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -180,8 +192,8 @@ fun KeyValueRow(
             Icon(
                 Icons.Rounded.ChevronRight,
                 contentDescription = null,
-                tint = Tok.Text4,
-                modifier = Modifier.size(18.dp)
+                tint = Tok.Text3,
+                modifier = Modifier.size(16.dp)
             )
         }
     }
@@ -198,6 +210,7 @@ fun DividerLine() {
     )
 }
 
+/** 主 CTA：54dp 高 / 26dp 圆角 / 竖向渐变 + 强调色辉光 */
 @Composable
 fun PrimaryButton(
     text: String,
@@ -208,24 +221,36 @@ fun PrimaryButton(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.97f else 1f, label = "scale")
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.97f else 1f,
+        animationSpec = tween(durationMillis = Tok.DurMicro, easing = Tok.Ease),
+        label = "ctaScale"
+    )
+    val shape = RoundedCornerShape(Tok.RCta)
     Box(
         modifier = modifier
+            .height(54.dp)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
                 alpha = if (enabled) 1f else 0.45f
             }
-            .shadow(18.dp, RoundedCornerShape(Tok.RButton), clip = false)
-            .clip(RoundedCornerShape(Tok.RButton))
-            .background(Brush.horizontalGradient(listOf(Tok.Accent, Tok.Accent2)))
+            .shadow(
+                elevation = 18.dp,
+                shape = shape,
+                clip = false,
+                ambientColor = Tok.Accent,
+                spotColor = Tok.Accent
+            )
+            .clip(shape)
+            .background(Brush.verticalGradient(listOf(Tok.AccentLight, Tok.AccentDeep)))
             .clickable(
                 interactionSource = interaction,
                 indication = null,
                 enabled = enabled,
                 onClick = onClick
             )
-            .padding(horizontal = 22.dp, vertical = 15.dp),
+            .padding(horizontal = 22.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -233,15 +258,15 @@ fun PrimaryButton(
                 Icon(
                     icon,
                     contentDescription = null,
-                    tint = Color(0xFF08090F),
+                    tint = Color.White,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(Modifier.width(8.dp))
             }
             Text(
                 text,
-                style = MaterialTheme.typography.titleMedium,
-                color = Color(0xFF08090F)
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.White
             )
         }
     }
@@ -257,7 +282,11 @@ fun GhostButton(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.97f else 1f, label = "scale")
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.97f else 1f,
+        animationSpec = tween(durationMillis = Tok.DurMicro, easing = Tok.Ease),
+        label = "ghostScale"
+    )
     Box(
         modifier = modifier
             .graphicsLayer {
@@ -283,6 +312,7 @@ fun GhostButton(
     }
 }
 
+/** 全圆 Chip */
 @Composable
 fun Pill(
     text: String,
@@ -292,14 +322,16 @@ fun Pill(
 ) {
     val bg = if (selected) Tok.Accent.copy(alpha = 0.20f) else Tok.Glass
     val stroke = if (selected) Tok.Accent.copy(alpha = 0.60f) else Tok.Stroke
-    val fg = if (selected) Tok.Accent2 else Tok.Text2
+    val fg = if (selected) Color.White else Tok.Text2
     Box(
         modifier
+            .height(34.dp)
             .clip(RoundedCornerShape(Tok.RChip))
             .background(bg)
             .border(1.dp, stroke, RoundedCornerShape(Tok.RChip))
             .clickable { onClick() }
-            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .padding(horizontal = 15.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(text, style = MaterialTheme.typography.labelLarge, color = fg)
     }
@@ -310,16 +342,16 @@ fun BackBar(title: String, subtitle: String? = null, onBack: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = Tok.Page, vertical = Tok.M),
+            .padding(horizontal = Tok.Page, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
         Box(
             Modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .background(Tok.Glass)
-                .border(1.dp, Tok.Stroke, CircleShape)
+                .size(34.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0x0DFFFFFF))
+                .border(1.dp, Color(0x12FFFFFF), RoundedCornerShape(12.dp))
                 .clickable { onBack() },
             contentAlignment = Alignment.Center
         ) {
@@ -327,11 +359,11 @@ fun BackBar(title: String, subtitle: String? = null, onBack: () -> Unit) {
                 Icons.Rounded.ArrowBack,
                 contentDescription = "返回",
                 tint = Tok.Text1,
-                modifier = Modifier.size(19.dp)
+                modifier = Modifier.size(17.dp)
             )
         }
         Spacer(Modifier.width(12.dp))
-        Column {
+        Column(Modifier.weight(1f)) {
             Text(
                 title,
                 style = MaterialTheme.typography.titleLarge,
