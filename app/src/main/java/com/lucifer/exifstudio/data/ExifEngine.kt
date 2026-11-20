@@ -25,18 +25,22 @@ import kotlin.math.log2
  * ## 为什么必须补「相机骨架字段」
  *
  * AndroidX ExifInterface 只会写你显式 set 过的 tag，不会替你把一张图
- * 补成「合规的相机照片」。而 MIUI / HyperOS 相册的水印功能在读到
- * Exif SubIFD 却找不到 `ExifVersion` 时，会把整段判定为无效，
- * 直接显示「无拍摄信息」——哪怕 Make/Model/FNumber 一个不缺。
+ * 补成「合规的相机照片」。
  *
- * 所以从 build-22 起，[applyProfile] 会补齐一整套相机骨架：
- * ExifVersion、FlashpixVersion、ColorSpace、ComponentsConfiguration、
- * ExposureProgram、MeteringMode、SceneType、ExposureMode、SensingMethod、
- * FileSource、OffsetTime*、APEX 派生值、FocalPlane 分辨率、LensSpecification。
+ * JPEG/Exif 规范里，Exif SubIFD 有三个**必需标签**：
+ *   - 0x9000 ExifVersion
+ *   - 0xA002 ExifImageWidth
+ *   - 0xA003 ExifImageHeight
  *
- * 注：AndroidX ExifInterface 至今（含 1.4.1）都没有写入缩略图的公开 API
- * （只有 getThumbnail 系列，setThumbnail 从未公开），因此改用 Exif 2.3 的
- * `FileSource = 3`（DSC，数码静态相机）作为等效的「相机来源」标记。
+ * 缺任一个，严格解析器（包括 MIUI / HyperOS 相册的水印模块）会把整段
+ * Exif SubIFD 判定为无效，直接显示「无拍摄信息」——哪怕 Make / Model /
+ * FNumber 一个不缺。这是 build-21 及之前版本的真因。
+ *
+ * 注意：`TAG_IMAGE_WIDTH`(0x0100) 是 IFD0 的 ImageWidth，**不是**
+ * Exif SubIFD 的 0xA002，两者不能互相代替。
+ *
+ * 注：AndroidX ExifInterface 至今（含 1.4.1）都没有写入缩略图的公开 API，
+ * 因此改用 Exif 2.3 的 `FileSource = 3`（DSC，数码静态相机）作为等效特征。
  */
 object ExifEngine {
 
@@ -108,7 +112,7 @@ object ExifEngine {
             if (!isJpeg(dst) && !transcodeToJpeg(dst)) return false
 
             val ex = ExifInterface(dst.absolutePath)
-            applyProfile(ex, profile)
+            applyProfile(ex, profile, dst.absolutePath)
             ex.saveAttributes()
             true
         } catch (t: Throwable) {
@@ -145,7 +149,7 @@ object ExifEngine {
      *  - 核心字段（Make/Model/曝光三要素/时间/GPS）直接写，失败即整体失败；
      *  - 骨架与锦上添花的字段用 [safe] 包裹，个别写不进去也不影响整体落盘。
      */
-    private fun applyProfile(ex: ExifInterface, p: ExifProfile) {
+    private fun applyProfile(ex: ExifInterface, p: ExifProfile, path: String) {
         // ===== 1. 身份 =====
         if (p.make.isNotBlank()) ex.setAttribute(ExifInterface.TAG_MAKE, p.make.trim())
         if (p.model.isNotBlank()) ex.setAttribute(ExifInterface.TAG_MODEL, p.model.trim())
@@ -157,8 +161,17 @@ object ExifEngine {
             safe { ex.setAttribute(ExifInterface.TAG_ORIENTATION, "1") }
         }
 
-        // ===== 2. Exif 骨架（MIUI 判定「是否拍摄照片」的关键）=====
+        // ===== 2. Exif 必需标签（缺则整段 SubIFD 作废）=====
         safe { ex.setAttribute(ExifInterface.TAG_EXIF_VERSION, "0232") }
+        val (imgW, imgH) = resolveSize(p, path)
+        if (imgW > 0 && imgH > 0) {
+            safe { ex.setAttribute(ExifInterface.TAG_PIXEL_X_DIMENSION, imgW.toString()) }
+            safe { ex.setAttribute(ExifInterface.TAG_PIXEL_Y_DIMENSION, imgH.toString()) }
+            safe { ex.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, imgW.toString()) }
+            safe { ex.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, imgH.toString()) }
+        }
+
+        // ===== 3. 其余骨架 =====
         safe { ex.setAttribute(ExifInterface.TAG_FLASHPIX_VERSION, "0100") }
         safe { ex.setAttribute(ExifInterface.TAG_COLOR_SPACE, "1") }
         safe { ex.setAttribute(ExifInterface.TAG_COMPONENTS_CONFIGURATION, "1,2,3,0") }
@@ -166,7 +179,7 @@ object ExifEngine {
         // FileSource = 3 表示 DSC（数码静态相机），替代无法写入的内嵌缩略图
         safe { ex.setAttribute(ExifInterface.TAG_FILE_SOURCE, "3") }
 
-        // ===== 3. 曝光三要素 + 派生 APEX 值 =====
+        // ===== 4. 曝光三要素 + 派生 APEX 值 =====
         if (p.fNumber.isNotBlank()) {
             ex.setAttribute(ExifInterface.TAG_F_NUMBER, p.fNumber)
             val f = p.fNumber.toDoubleOrNull()
@@ -192,7 +205,7 @@ object ExifEngine {
             safe { ex.setAttribute(ExifInterface.TAG_SENSITIVITY_TYPE, "1") }
         }
 
-        // ===== 4. 焦距 =====
+        // ===== 5. 焦距 =====
         if (p.focalLength.isNotBlank()) {
             ex.setAttribute(ExifInterface.TAG_FOCAL_LENGTH, p.focalLength)
         }
@@ -201,7 +214,7 @@ object ExifEngine {
         }
         safe { ex.setAttribute(ExifInterface.TAG_DIGITAL_ZOOM_RATIO, "1") }
 
-        // ===== 5. 相机行为指纹 =====
+        // ===== 6. 相机行为指纹 =====
         // 水印模板把「光圈 · ISO · 快门」当一个整体渲染，
         // 缺曝光程序/测光模式时部分机型会整体降级成「无拍摄信息」。
         safe { ex.setAttribute(ExifInterface.TAG_EXPOSURE_PROGRAM, "2") }   // 普通程序
@@ -218,7 +231,7 @@ object ExifEngine {
         safe { ex.setAttribute(ExifInterface.TAG_SATURATION, "0") }
         safe { ex.setAttribute(ExifInterface.TAG_SHARPNESS, "0") }
 
-        // ===== 6. 镜头 =====
+        // ===== 7. 镜头 =====
         if (p.lensModel.isNotBlank()) {
             safe { ex.setAttribute(ExifInterface.TAG_LENS_MODEL, p.lensModel.trim()) }
             if (p.make.isNotBlank()) {
@@ -235,16 +248,12 @@ object ExifEngine {
             }
         }
 
-        // ===== 7. 尺寸 =====
-        if (p.width > 0 && p.height > 0) {
-            safe { ex.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, p.width.toString()) }
-            safe { ex.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, p.height.toString()) }
-        }
+        // ===== 8. 焦平面分辨率 =====
         safe { ex.setAttribute(ExifInterface.TAG_FOCAL_PLANE_X_RESOLUTION, "72") }
         safe { ex.setAttribute(ExifInterface.TAG_FOCAL_PLANE_Y_RESOLUTION, "72") }
         safe { ex.setAttribute(ExifInterface.TAG_FOCAL_PLANE_RESOLUTION_UNIT, "2") } // 英寸
 
-        // ===== 8. 白平衡 =====
+        // ===== 9. 白平衡 =====
         // WhiteBalance 0=自动 1=手动；LightSource 记录场景光源枚举
         safe {
             ex.setAttribute(ExifInterface.TAG_WHITE_BALANCE, if (p.wbAuto) "0" else "1")
@@ -253,7 +262,7 @@ object ExifEngine {
             }
         }
 
-        // ===== 9. 时间 + 时区偏移 =====
+        // ===== 10. 时间 + 时区偏移 =====
         val stamp = p.dateTime.ifBlank { formatDate(Date()) }
         ex.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, stamp)
         ex.setAttribute(ExifInterface.TAG_DATETIME, stamp)
@@ -263,7 +272,7 @@ object ExifEngine {
         safe { ex.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, off) }
         safe { ex.setAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED, off) }
 
-        // ===== 10. GPS =====
+        // ===== 11. GPS =====
         if (p.hasLocation) {
             val lat = p.latitude!!
             val lon = p.longitude!!
@@ -282,6 +291,14 @@ object ExifEngine {
         }
     }
 
+    /** 尺寸优先用 profile 的，缺失时从文件本身解码兜底（0xA002/0xA003 不能缺） */
+    private fun resolveSize(p: ExifProfile, path: String): Pair<Int, Int> {
+        if (p.width > 0 && p.height > 0) return p.width to p.height
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        runCatching { BitmapFactory.decodeFile(path, bounds) }
+        return bounds.outWidth.coerceAtLeast(0) to bounds.outHeight.coerceAtLeast(0)
+    }
+
     // ---------- 校验 ----------
 
     /**
@@ -289,15 +306,19 @@ object ExifEngine {
      *
      * 只用 AndroidX 回读是不够的——它读得到，不代表系统自带的
      * `android.media.ExifInterface`（MIUI 相册底层用的就是它）也读得到。
-     * 这里同时用两套解析器读一遍，把差异暴露给用户。
+     * 「结构」一项专测 Exif SubIFD 的三个必需标签是否齐全。
      */
     fun verify(file: File): String {
+        var axStruct = false
         var axModel = false
         var axLens = false
         var axIso = false
         var axGps = false
         runCatching {
             val e = ExifInterface(file.absolutePath)
+            axStruct = !e.getAttribute(ExifInterface.TAG_EXIF_VERSION).isNullOrBlank() &&
+                !e.getAttribute(ExifInterface.TAG_PIXEL_X_DIMENSION).isNullOrBlank() &&
+                !e.getAttribute(ExifInterface.TAG_PIXEL_Y_DIMENSION).isNullOrBlank()
             axModel = e.getAttribute(ExifInterface.TAG_MODEL).orEmpty().isNotBlank()
             axLens = e.getAttribute(ExifInterface.TAG_LENS_MODEL).orEmpty().isNotBlank()
             axIso = (
@@ -324,7 +345,7 @@ object ExifEngine {
             "系统 型号${tick(sys[0])}快门${tick(sys[1])}光圈${tick(sys[2])}ISO${tick(sys[3])}时间${tick(sys[4])}"
         }
 
-        return "AX 型号${tick(axModel)}镜头${tick(axLens)}ISO${tick(axIso)}定位${tick(axGps)}\n$sysText"
+        return "AX 结构${tick(axStruct)}型号${tick(axModel)}镜头${tick(axLens)}ISO${tick(axIso)}定位${tick(axGps)}\n$sysText"
     }
 
     private fun tick(v: Boolean): String = if (v) "✓" else "✗"
