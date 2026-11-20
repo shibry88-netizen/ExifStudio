@@ -2,6 +2,7 @@ package com.lucifer.exifstudio.vm
 
 import android.app.Application
 import android.net.Uri
+import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.lucifer.exifstudio.data.Brand
@@ -11,10 +12,10 @@ import com.lucifer.exifstudio.data.DeviceRepository
 import com.lucifer.exifstudio.data.ExifEngine
 import com.lucifer.exifstudio.data.ExifProfile
 import com.lucifer.exifstudio.data.GeoClient
+import com.lucifer.exifstudio.data.GeoResult
 import com.lucifer.exifstudio.data.HistoryItem
 import com.lucifer.exifstudio.data.HistoryStore
 import com.lucifer.exifstudio.data.PhotoStore
-import com.lucifer.exifstudio.data.Place
 import com.lucifer.exifstudio.data.Prefs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +27,6 @@ import kotlinx.coroutines.withContext
 data class StudioState(
     val photoUri: Uri? = null,
     val profile: ExifProfile = ExifProfile(),
-    /** 刚打开时的原始 EXIF，用来算「已改 N 项」 */
     val original: ExifProfile? = null,
     val brands: List<Brand> = emptyList(),
     val device: Device? = null,
@@ -41,7 +41,7 @@ data class StudioState(
     val changedCount: Int get() = original?.let { diffCount(profile, it) } ?: 0
 }
 
-/** 只比可能被改写的字段，缩略图/宽高等不变的不算 */
+/** 只比可能被改写的字段 */
 private fun diffCount(a: ExifProfile, b: ExifProfile): Int {
     var n = 0
     if (a.make != b.make) n++
@@ -100,7 +100,6 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** 从「最近编辑」重新打开一张成品图 */
     fun openHistory(item: HistoryItem) {
         runCatching { Uri.parse(item.uri) }.getOrNull()?.let { openPhoto(it) }
     }
@@ -134,7 +133,6 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
         edit { it.copy(latitude = null, longitude = null, address = "", altitude = null) }
     }
 
-    /** 撤销所有改动，回到刚打开时的状态 */
     fun reset() {
         val original = _state.value.original ?: return
         _state.value = _state.value.copy(profile = original)
@@ -159,11 +157,30 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
         val uri = snapshot.photoUri ?: return
         viewModelScope.launch {
             _state.value = snapshot.copy(busy = true, message = null)
-            val saved = withContext(Dispatchers.IO) {
+            val result = withContext(Dispatchers.IO) {
                 val file = PhotoStore.cacheFile(context, "out_${System.currentTimeMillis()}.jpg")
-                val ok = ExifEngine.write(context, uri, snapshot.profile, file)
-                if (ok) PhotoStore.saveImage(context, file, PhotoStore.displayName()) else null
+                if (!ExifEngine.write(context, uri, snapshot.profile, file)) {
+                    return@withContext null to ""
+                }
+                // 写完后立刻回读成品，校验关键字段真写进去了
+                val check = runCatching {
+                    val back = ExifInterface(file.absolutePath)
+                    val hasModel = back.getAttribute(ExifInterface.TAG_MODEL).orEmpty().isNotBlank()
+                    val hasLens = back.getAttribute(ExifInterface.TAG_LENS_MODEL).orEmpty().isNotBlank()
+                    val hasIso = back.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)
+                        .orEmpty().isNotBlank()
+                    val hasGps = back.latLong != null
+                    buildString {
+                        append(if (hasModel) "型号✓ " else "型号✗ ")
+                        append(if (hasLens) "镜头✓ " else "镜头✗ ")
+                        append(if (hasIso) "ISO✓ " else "ISO✗ ")
+                        append(if (hasGps) "位置✓" else "位置✗")
+                    }
+                }.getOrDefault("")
+                PhotoStore.saveImage(context, file, PhotoStore.displayName()) to check
             }
+            val saved = result.first
+            val check = result.second
             val history = if (saved != null) {
                 withContext(Dispatchers.IO) {
                     historyStore.add(
@@ -182,7 +199,7 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
                 savedUri = saved,
                 history = history,
                 message = if (saved != null) {
-                    "已写入并保存到相册 · Pictures/影迹"
+                    "已保存到相册 · 写入校验 $check"
                 } else {
                     "写入失败。HEIC/ProRAW 等格式可能不支持原地写 EXIF，请换 JPEG 再试。"
                 }
@@ -190,7 +207,6 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** 一键去除全部元数据（含 GPS） */
     fun stripAll(onDone: (Boolean) -> Unit) {
         val snapshot = _state.value
         val uri = snapshot.photoUri
@@ -232,14 +248,16 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
         _state.value = _state.value.copy(message = null)
     }
 
-    // ---------- 地图 / 搜索 ----------
+    // ---------- 地图 / 检索 ----------
 
-    suspend fun searchPlaces(query: String): List<Place> = GeoClient(prefs.geoBaseUrl).search(query)
+    private fun geoClient(): GeoClient =
+        GeoClient(prefs.geoProvider, prefs.amapKey, prefs.geoBaseUrl)
 
-    suspend fun reverseGeocode(lat: Double, lon: Double): String =
-        GeoClient(prefs.geoBaseUrl).reverse(lat, lon)
+    suspend fun searchPlaces(query: String): GeoResult = geoClient().search(query)
 
-    // ---------- 地图源设置 ----------
+    suspend fun reverseGeocode(lat: Double, lon: Double): String = geoClient().reverse(lat, lon)
+
+    // ---------- 设置 ----------
 
     var tileKind: String
         get() = prefs.tileKind
@@ -257,5 +275,17 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
         get() = prefs.geoBaseUrl
         set(value) {
             prefs.geoBaseUrl = value
+        }
+
+    var geoProvider: String
+        get() = prefs.geoProvider
+        set(value) {
+            prefs.geoProvider = value
+        }
+
+    var amapKey: String
+        get() = prefs.amapKey
+        set(value) {
+            prefs.amapKey = value
         }
 }

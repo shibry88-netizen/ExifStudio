@@ -73,49 +73,188 @@ object Coord {
     }
 }
 
+/** 检索结果：要么有列表，要么带一句人话的错误 */
+sealed class GeoResult {
+    data class Ok(val places: List<Place>) : GeoResult()
+    data class Fail(val message: String) : GeoResult()
+}
+
+object GeoProvider {
+    const val AUTO = "auto"
+    const val OSM = "osm"
+    const val PHOTON = "photon"
+    const val AMAP = "amap"
+}
+
 /**
  * 地名检索 / 逆地理编码。
- * 默认走 OpenStreetMap Nominatim：免密钥、支持中文、可自建。
- * 想换高德/百度/自建 Photon，只要把 baseUrl 改成同结构的服务即可。
+ *
+ * 国内网络下 Nominatim 经常超时或被限流，所以做了多源兜底：
+ *   高德（需自备 Key，国内最准） → OSM Nominatim → Photon。
+ * 任何一个源拿到结果就直接返回；全部失败才报错，错误会在界面上显示出来，不再静默。
  */
-class GeoClient(baseUrl: String = PREF_DEFAULT) {
+class GeoClient(
+    private val provider: String = GeoProvider.AUTO,
+    private val amapKey: String = "",
+    baseUrl: String = NOMINATIM
+) {
 
     private val root = baseUrl.trimEnd('/')
 
-    suspend fun search(query: String): List<Place> = withContext(Dispatchers.IO) {
-        if (query.isBlank()) return@withContext emptyList()
+    suspend fun search(query: String): GeoResult = withContext(Dispatchers.IO) {
+        if (query.isBlank()) return@withContext GeoResult.Ok(emptyList())
+
+        val order = when (provider) {
+            GeoProvider.OSM -> listOf(GeoProvider.OSM, GeoProvider.PHOTON)
+            GeoProvider.PHOTON -> listOf(GeoProvider.PHOTON, GeoProvider.OSM)
+            GeoProvider.AMAP -> listOf(GeoProvider.AMAP)
+            else -> if (amapKey.isNotBlank()) {
+                listOf(GeoProvider.AMAP, GeoProvider.OSM, GeoProvider.PHOTON)
+            } else {
+                listOf(GeoProvider.OSM, GeoProvider.PHOTON)
+            }
+        }
+
+        var lastError = ""
+        var sawEmpty = false
+
+        for (p in order) {
+            val places: List<Place>? = when (p) {
+                GeoProvider.AMAP -> {
+                    if (amapKey.isBlank()) {
+                        lastError = "尚未配置高德 Key"
+                        null
+                    } else {
+                        runCatching { searchAmap(query) }
+                            .onFailure { lastError = it.message ?: "高德检索失败" }
+                            .getOrNull()
+                    }
+                }
+
+                GeoProvider.PHOTON -> runCatching { searchPhoton(query) }
+                    .onFailure { lastError = it.message ?: "Photon 检索失败" }
+                    .getOrNull()
+
+                else -> runCatching { searchNominatim(query) }
+                    .onFailure { lastError = it.message ?: "OSM 检索失败" }
+                    .getOrNull()
+            }
+
+            if (places != null && places.isNotEmpty()) return@withContext GeoResult.Ok(places)
+            if (places != null) sawEmpty = true
+        }
+
+        if (sawEmpty) GeoResult.Ok(emptyList())
+        else GeoResult.Fail(lastError.ifBlank { "无法连接地名服务，请检查网络" })
+    }
+
+    suspend fun reverse(lat: Double, lon: Double): String = withContext(Dispatchers.IO) {
+        if (amapKey.isNotBlank()) {
+            runCatching { reverseAmap(lat, lon) }
+                .getOrNull()
+                ?.takeIf { it.isNotBlank() }
+                ?.let { return@withContext it }
+        }
+        runCatching { reverseNominatim(lat, lon) }.getOrNull().orEmpty()
+    }
+
+    // ---------- 各源实现 ----------
+
+    private fun searchNominatim(q: String): List<Place> {
         val url = "$root/search?format=jsonv2&limit=10&addressdetails=1&accept-language=zh-CN,zh,en&q=" +
-            URLEncoder.encode(query, "UTF-8")
-        val body = httpGet(url) ?: return@withContext emptyList()
-        val array = runCatching { JSONArray(body) }.getOrNull() ?: return@withContext emptyList()
-        (0 until array.length()).mapNotNull { i ->
+            URLEncoder.encode(q, "UTF-8")
+        val body = httpGet(url) ?: error("OSM 无响应（可能被限流或网络不通）")
+        val array = JSONArray(body)
+        return (0 until array.length()).mapNotNull { i ->
             val o = array.optJSONObject(i) ?: return@mapNotNull null
             val lat = o.optString("lat").toDoubleOrNull() ?: return@mapNotNull null
             val lon = o.optString("lon").toDoubleOrNull() ?: return@mapNotNull null
             val display = o.optString("display_name")
-            val name = o.optString("name").ifBlank { display.substringBefore("，").substringBefore(",") }
+            val name = o.optString("name").ifBlank {
+                display.substringBefore("，").substringBefore(",")
+            }
             Place(title = name, subtitle = display, lat = lat, lon = lon)
         }
     }
 
-    suspend fun reverse(lat: Double, lon: Double): String = withContext(Dispatchers.IO) {
+    private fun searchPhoton(q: String): List<Place> {
+        val url = "https://photon.komoot.io/api/?limit=10&lang=zh&q=" +
+            URLEncoder.encode(q, "UTF-8")
+        val body = httpGet(url) ?: error("Photon 无响应")
+        val features = JSONObject(body).optJSONArray("features") ?: return emptyList()
+        return (0 until features.length()).mapNotNull { i ->
+            val f = features.optJSONObject(i) ?: return@mapNotNull null
+            val p = f.optJSONObject("properties") ?: return@mapNotNull null
+            val coords = f.optJSONObject("geometry")?.optJSONArray("coordinates")
+                ?: return@mapNotNull null
+            val lon = coords.optDouble(0, Double.NaN)
+            val lat = coords.optDouble(1, Double.NaN)
+            if (lat.isNaN() || lon.isNaN()) return@mapNotNull null
+            val sub = listOf(
+                p.optString("city"), p.optString("state"), p.optString("country")
+            ).filter { it.isNotBlank() }.joinToString(" · ")
+            val name = p.optString("name").ifBlank { p.optString("street").ifBlank { sub } }
+            Place(title = name, subtitle = sub, lat = lat, lon = lon)
+        }
+    }
+
+    private fun searchAmap(q: String): List<Place> {
+        val url = "https://restapi.amap.com/v3/place/text?key=$amapKey&offset=10&page=1&extensions=base&keywords=" +
+            URLEncoder.encode(q, "UTF-8")
+        val body = httpGet(url) ?: error("高德无响应")
+        val o = JSONObject(body)
+        if (o.optString("status") != "1") {
+            error("高德：" + o.optString("info").ifBlank { "返回异常" })
+        }
+        val pois = o.optJSONArray("pois") ?: return emptyList()
+        return (0 until pois.length()).mapNotNull { i ->
+            val poi = pois.optJSONObject(i) ?: return@mapNotNull null
+            val parts = poi.optString("location").split(",")
+            if (parts.size != 2) return@mapNotNull null
+            val gLon = parts[0].toDoubleOrNull() ?: return@mapNotNull null
+            val gLat = parts[1].toDoubleOrNull() ?: return@mapNotNull null
+            // 高德返回 GCJ-02，统一转成 WGS-84 存起来
+            val wgs = Coord.gcj02ToWgs84(gLat, gLon)
+            val sub = listOf(
+                poi.optString("cityname"), poi.optString("adname"), poi.optString("address")
+            ).filter { it.isNotBlank() && it != "[]" }.joinToString(" · ")
+            Place(
+                title = poi.optString("name").ifBlank { sub },
+                subtitle = sub,
+                lat = wgs[0],
+                lon = wgs[1]
+            )
+        }
+    }
+
+    private fun reverseNominatim(lat: Double, lon: Double): String {
         val url = "$root/reverse?format=jsonv2&zoom=18&accept-language=zh-CN,zh,en&lat=$lat&lon=$lon"
-        val body = httpGet(url) ?: return@withContext ""
-        runCatching { JSONObject(body).optString("display_name") }.getOrDefault("")
+        val body = httpGet(url) ?: return ""
+        return runCatching { JSONObject(body).optString("display_name") }.getOrDefault("")
+    }
+
+    private fun reverseAmap(lat: Double, lon: Double): String {
+        val g = Coord.wgs84ToGcj02(lat, lon)
+        val url = "https://restapi.amap.com/v3/geocode/regeo?key=$amapKey&extensions=base&location=" +
+            "${g[1]},${g[0]}"
+        val body = httpGet(url) ?: return ""
+        val o = JSONObject(body)
+        if (o.optString("status") != "1") return ""
+        return o.optJSONObject("regeocode")?.optString("formatted_address").orEmpty()
     }
 
     private fun httpGet(url: String): String? = runCatching {
         val conn = URL(url).openConnection() as HttpURLConnection
-        conn.connectTimeout = 12000
-        conn.readTimeout = 12000
+        conn.connectTimeout = 8000
+        conn.readTimeout = 10000
         conn.instanceFollowRedirects = true
-        conn.setRequestProperty("User-Agent", "ExifStudio/1.0 (Android)")
+        conn.setRequestProperty("User-Agent", "ExifStudio/1.2 (Android)")
         conn.setRequestProperty("Accept", "application/json")
         conn.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
     }.getOrNull()
 
     companion object {
-        const val PREF_DEFAULT = "https://nominatim.openstreetmap.org"
+        const val NOMINATIM = "https://nominatim.openstreetmap.org"
     }
 }
 
@@ -132,7 +271,6 @@ object MapTiles {
         else -> TileSourceFactory.MAPNIK
     }
 
-    /** GCJ-02 瓦片需要把 WGS-84 坐标先转过去才能对齐 */
     fun usesGcj(kind: String): Boolean = kind == GAODE
 
     fun toMap(kind: String, lat: Double, lon: Double): DoubleArray =
@@ -198,8 +336,21 @@ class Prefs(context: Context) {
         }
 
     var geoBaseUrl: String
-        get() = sp.getString("geo_url", GeoClient.PREF_DEFAULT) ?: GeoClient.PREF_DEFAULT
+        get() = sp.getString("geo_url", GeoClient.NOMINATIM) ?: GeoClient.NOMINATIM
         set(value) {
             sp.edit().putString("geo_url", value).apply()
+        }
+
+    var geoProvider: String
+        get() = sp.getString("geo_provider", GeoProvider.AUTO) ?: GeoProvider.AUTO
+        set(value) {
+            sp.edit().putString("geo_provider", value).apply()
+        }
+
+    /** 高德 Web 服务 Key，填了之后检索/逆编码会优先走高德（国内最准） */
+    var amapKey: String
+        get() = sp.getString("amap_key", "") ?: ""
+        set(value) {
+            sp.edit().putString("amap_key", value).apply()
         }
 }
