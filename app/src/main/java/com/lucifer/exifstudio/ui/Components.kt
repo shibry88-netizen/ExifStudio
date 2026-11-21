@@ -139,13 +139,14 @@ fun Modifier.glass(
 fun GlassCard(
     modifier: Modifier = Modifier,
     radius: Dp = Tok.RCard,
+    frost: Frostness = Frostness.Regular,
     padding: Dp = Tok.L,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .glass(radius)
+            .glass(radius, frost)
             .padding(padding),
         content = content
     )
@@ -181,7 +182,7 @@ fun SectionCard(
         Column(
             Modifier
                 .fillMaxWidth()
-                .glass()
+                .glass(frost = Frostness.Thin)
                 .padding(vertical = 6.dp),
             content = content
         )
@@ -216,7 +217,7 @@ fun KeyValueRow(
         Text(
             value.ifBlank { "未设置" },
             style = if (mono) Mono else MaterialTheme.typography.bodyLarge,
-            color = if (value.isBlank()) Tok.Text4 else valueColor,
+            color = if (value.isBlank()) Tok.Text3 else valueColor,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
