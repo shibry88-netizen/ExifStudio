@@ -15,31 +15,39 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * 设计 Token —— 暗夜液态玻璃（对齐设计师交付的 ExifTokens）。
- * 玻璃只有三层：底胚 6% 白 + 顶内高光 18% + 外 1px 8% 亮边，再叠 -20px/60px 柔投影。
- * 再多一层就浑河。
+ * 设计 Token —— 暗夜磨砂玻璃。
+ *
+ * 材质只有四件事：底胚（veil）+ 极细颗粒 + 顶缘内高光 + 1px 外沿。
+ * 全部走 drawBehind 纯填充，不用 shadow()/RenderEffect —— 没有离屏层就没有黑方块，
+ * 也没有逐帧模糊开销，滚动恒定格。
  */
 object Tok {
 
     // ── 色彩 ──────────────────────────────────────────
-    val Bg0 = Color(0xFF050506)
-    val Bg1 = Color(0xFF0B0C0F)
+    val Bg0 = Color(0xFF07080B)
+    val Bg1 = Color(0xFF0C0E13)
 
-    val Glass = Color(0x0FFFFFFF)        // rgba(255,255,255,.06)
-    val GlassStrong = Color(0x17FFFFFF)  // .09
-    val Stroke = Color(0x14FFFFFF)       // .08
-    val Highlight = Color(0x2EFFFFFF)    // .18
+    /** 磨砂底胚：比 Bg1 亮一档，光斑透过来仍然是暗底，白字不糊 */
+    val Frost = Color(0xFF12151C)
+    val FrostEdge = Color(0x1FFFFFFF)    // .12
+    val FrostTop = Color(0x2BFFFFFF)     // .17
+    val Sheet = Color(0xFF0B0D12).copy(alpha = 0.86f)
 
-    val Text1 = Color(0xEBFFFFFF)        // .92
-    val Text2 = Color(0x9EFFFFFF)        // .62
-    val Text3 = Color(0x61FFFFFF)        // .38
-    val Text4 = Color(0x33FFFFFF)        // .20
+    val Glass = Color(0x0FFFFFFF)
+    val GlassStrong = Color(0x17FFFFFF)
+    val Stroke = Color(0x1AFFFFFF)       // .10
+    val Highlight = Color(0x2EFFFFFF)
+
+    val Text1 = Color(0xF2FFFFFF)        // .95
+    val Text2 = Color(0xB3FFFFFF)        // .70
+    val Text3 = Color(0x8AFFFFFF)        // .54
+    val Text4 = Color(0x5CFFFFFF)        // .36
 
     val Accent = Color(0xFF6E8BFF)
     val Accent2 = Color(0xFF7DD3FC)
-    val AccentLight = Color(0xFF7A94FF)
-    val AccentDeep = Color(0xFF607CF0)
-    val Danger = Color(0xFFFF7A7A)
+    val AccentLight = Color(0xFF8098FF)
+    val AccentDeep = Color(0xFF5E79EE)
+    val Danger = Color(0xFFFF8A8A)
     val Success = Color(0xFF5AD6A0)
 
     // ── 圆角 ──────────────────────────────────────────
@@ -62,7 +70,20 @@ object Tok {
     /** 统一缓动：Apple 式减速曲线 */
     val Ease = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)
     const val DurMicro = 140      // 按压 / 勾选
+    const val DurScreen = 260     // 换页
     const val DurContainer = 320  // 抽屉 / 面板
+}
+
+/**
+ * 磨砂厚度。分级照搬 Haze 的材质预设（ultraThin → ultraThick）：
+ * 越"薄"透得越多、越"厚"越像毛玻璃。数值是遮罩不透明度。
+ */
+enum class Frostness(val veil: Float) {
+    UltraThin(0.44f),
+    Thin(0.58f),
+    Regular(0.72f),
+    Thick(0.85f),
+    UltraThick(0.93f)
 }
 
 private val AppColorScheme = darkColorScheme(
@@ -103,8 +124,8 @@ private val AppTypography = Typography(
         fontWeight = FontWeight.Medium
     ),
     bodyLarge = TextStyle(fontSize = 15.sp, lineHeight = 24.sp),
-    bodyMedium = TextStyle(fontSize = 13.sp, lineHeight = 18.sp),
-    bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 16.sp),
+    bodyMedium = TextStyle(fontSize = 13.sp, lineHeight = 19.sp),
+    bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 17.sp),
     labelLarge = TextStyle(
         fontSize = 13.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.2.sp
     ),
