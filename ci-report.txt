@@ -23,8 +23,8 @@
 > Task :app:processReleaseManifestForPackage FROM-CACHE
 > Task :app:processReleaseResources FROM-CACHE
 > Task :app:javaPreCompileRelease FROM-CACHE
-> Task :app:extractProguardFiles
 > Task :app:mergeReleaseArtProfile
+> Task :app:extractProguardFiles
 > Task :app:mergeReleaseStartupProfile
 > Task :app:mergeReleaseShaders
 > Task :app:compileReleaseShaders NO-SOURCE
