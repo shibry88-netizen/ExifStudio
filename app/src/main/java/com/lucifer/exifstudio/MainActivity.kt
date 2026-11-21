@@ -1,5 +1,6 @@
 package com.lucifer.exifstudio
 
+import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -25,8 +26,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lucifer.exifstudio.data.Locator
 import com.lucifer.exifstudio.ui.AuroraBackground
 import com.lucifer.exifstudio.ui.DevicePickerSheet
 import com.lucifer.exifstudio.ui.EditorScreen
@@ -80,6 +83,29 @@ private fun AppRoot(vm: StudioViewModel, incoming: MutableState<Uri?>) {
     var showDevices by remember { mutableStateOf(false) }
     var showLens by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    // 位置权限：进软件就要，进选点页才有定位可用
+    var locAllowed by remember { mutableStateOf(Locator.granted(context)) }
+    val locPerm = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        locAllowed = result[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            result[Manifest.permission.ACCESS_COARSE_LOCATION] == true ||
+            Locator.granted(context)
+    }
+    val askLocation = {
+        locPerm.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        if (!locAllowed) askLocation()
+    }
 
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -147,6 +173,8 @@ private fun AppRoot(vm: StudioViewModel, incoming: MutableState<Uri?>) {
                     vm = vm,
                     initialLat = state.profile.latitude,
                     initialLon = state.profile.longitude,
+                    locationAllowed = locAllowed,
+                    onRequestLocation = askLocation,
                     onBack = { screen = Screen.Editor },
                     onConfirm = { lat, lon, address ->
                         vm.setLocation(lat, lon, address)
