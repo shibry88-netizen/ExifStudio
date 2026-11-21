@@ -245,7 +245,7 @@ private fun LensCard(cam: Camera, isSelected: Boolean, onClick: () -> Unit) {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "ISO ${cam.iso} · WB ${if (cam.wb == \"auto\") \"自动\" else \"${cam.wb}K\"} · ${cam.shutter}s",
+            "ISO ${cam.iso} · WB ${if (cam.wb == "auto") "自动" else "${cam.wb}K"} · ${cam.shutter}s",
             style = MaterialTheme.typography.labelSmall,
             color = Tok.Text3
         )
