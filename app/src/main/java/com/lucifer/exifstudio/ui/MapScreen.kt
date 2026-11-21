@@ -57,6 +57,7 @@ import androidx.core.content.ContextCompat
 import com.lucifer.exifstudio.R
 import com.lucifer.exifstudio.data.GeoProvider
 import com.lucifer.exifstudio.data.GeoResult
+import com.lucifer.exifstudio.data.Locator
 import com.lucifer.exifstudio.data.MapTiles
 import com.lucifer.exifstudio.data.Place
 import com.lucifer.exifstudio.vm.StudioViewModel
@@ -79,6 +80,8 @@ fun MapPickerScreen(
     vm: StudioViewModel,
     initialLat: Double?,
     initialLon: Double?,
+    locationAllowed: Boolean,
+    onRequestLocation: () -> Unit,
     onBack: () -> Unit,
     onConfirm: (Double, Double, String) -> Unit
 ) {
@@ -102,6 +105,8 @@ fun MapPickerScreen(
     var searchError by remember { mutableStateOf("") }
     var showSourceSheet by remember { mutableStateOf(false) }
     var showCoordEdit by remember { mutableStateOf(false) }
+    var locating by remember { mutableStateOf(false) }
+    var locError by remember { mutableStateOf("") }
 
     val mapView = remember {
         Configuration.getInstance().userAgentValue = context.packageName
@@ -132,6 +137,7 @@ fun MapPickerScreen(
                     lat = wgs[0]
                     lon = wgs[1]
                     searchError = ""
+                    locError = ""
                 }
                 return true
             }
@@ -207,6 +213,37 @@ fun MapPickerScreen(
                 }
             }
         }
+    }
+
+    // 取本机定位并落到选点。auto = 进页面自动跑一次
+    fun locate() {
+        if (!locationAllowed) {
+            locError = "没给定位权限，点一下允许后再试一次"
+            onRequestLocation()
+            return
+        }
+        if (locating) return
+        scope.launch {
+            locating = true
+            locError = ""
+            val fix = runCatching { Locator.fix(context) }.getOrNull()
+            locating = false
+            if (fix == null) {
+                locError = "拿不到定位：确认系统定位开关已开，或到窗边再试"
+                return@launch
+            }
+            lat = fix.lat
+            lon = fix.lon
+            searchError = ""
+            val g = MapTiles.toMap(tileKind, fix.lat, fix.lon)
+            mapView.controller.setZoom(17.0)
+            mapView.controller.animateTo(GeoPoint(g[0], g[1]))
+        }
+    }
+
+    // 每次进选点页都自动定位到手机上，不等用户点
+    LaunchedEffect(locationAllowed) {
+        if (locationAllowed) locate()
     }
 
     Box(Modifier.fillMaxSize().background(Tok.Bg0)) {
@@ -317,7 +354,8 @@ fun MapPickerScreen(
                 }
             }
 
-            if (searchError.isNotEmpty()) {
+            val notice = searchError.ifEmpty { locError }
+            if (notice.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Box(
                     Modifier
@@ -326,7 +364,7 @@ fun MapPickerScreen(
                         .padding(horizontal = 14.dp, vertical = 10.dp)
                 ) {
                     Text(
-                        searchError,
+                        notice,
                         style = MaterialTheme.typography.bodySmall,
                         color = Tok.Danger
                     )
@@ -402,7 +440,13 @@ fun MapPickerScreen(
             }
             Spacer(Modifier.height(10.dp))
             Text(
-                address.ifBlank { "长按地图任意位置落下标记" },
+                address.ifBlank {
+                    when {
+                        locating -> "正在取定位…"
+                        locError.isNotEmpty() -> "没取到位置，长按地图定点也一样"
+                        else -> "长按地图任意位置落下标记"
+                    }
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = Tok.Text1,
                 maxLines = 2
@@ -436,10 +480,41 @@ fun MapPickerScreen(
             }
             Spacer(Modifier.height(8.dp))
             Text(
-                "提示：长按地图定点 · 搜索命中后地图会自动跳转",
+                "进入即定位到本机 · 长按地图定点 · 搜索命中后自动跳转",
                 style = MaterialTheme.typography.labelSmall,
                 color = Tok.Text3
             )
+        }
+
+        Column(
+            Modifier
+                .align(Alignment.TopEnd)
+                .systemBarsPadding()
+                .padding(end = Tok.Page, top = 74.dp),
+            horizontalAlignment = Alignment.End
+        ) {
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .glass(20.dp, Frostness.Thin)
+                    .clickable { locate() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (locating) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = Tok.Accent2
+                    )
+                } else {
+                    Icon(
+                        Icons.Rounded.MyLocation,
+                        contentDescription = "定位到我的位置",
+                        tint = if (locationAllowed) Tok.Accent2 else Tok.Text3,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
         }
 
         Box(
