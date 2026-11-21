@@ -58,7 +58,7 @@ fun DevicePickerSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Tok.Bg1,
+        containerColor = Tok.Sheet,
         scrimColor = Tok.Bg0.copy(alpha = 0.6f)
     ) {
         Column(
@@ -104,7 +104,7 @@ private fun DeviceRow(device: Device, isSelected: Boolean, onClick: () -> Unit) 
     Row(
         Modifier
             .fillMaxWidth()
-            .glass(Tok.RInner)
+            .glass(Tok.RInner, Frostness.Thin)
             .clickable { onClick() }
             .padding(horizontal = 14.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -143,7 +143,7 @@ private fun DeviceRow(device: Device, isSelected: Boolean, onClick: () -> Unit) 
             Text(
                 "${device.lensCount} 摄",
                 style = MaterialTheme.typography.labelSmall,
-                color = Tok.Text4
+                color = Tok.Text3
             )
         }
     }
@@ -163,7 +163,7 @@ fun LensPickerSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Tok.Bg1,
+        containerColor = Tok.Sheet,
         scrimColor = Tok.Bg0.copy(alpha = 0.6f)
     ) {
         Column(
@@ -217,7 +217,7 @@ private fun LensCard(cam: Camera, isSelected: Boolean, onClick: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
-            .glass(Tok.RInner)
+            .glass(Tok.RInner, Frostness.Thin)
             .clickable { onClick() }
             .padding(14.dp)
     ) {
@@ -245,9 +245,9 @@ private fun LensCard(cam: Camera, isSelected: Boolean, onClick: () -> Unit) {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "ISO ${cam.iso} · WB ${if (cam.wb == "auto") "自动" else "${cam.wb}K"} · ${cam.shutter}s",
+            "ISO ${cam.iso} · WB ${if (cam.wb == \"auto\") \"自动\" else \"${cam.wb}K\"} · ${cam.shutter}s",
             style = MaterialTheme.typography.labelSmall,
-            color = Tok.Text4
+            color = Tok.Text3
         )
     }
 }

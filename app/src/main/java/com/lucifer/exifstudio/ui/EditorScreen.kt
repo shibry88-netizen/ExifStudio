@@ -66,7 +66,7 @@ fun EditorScreen(
     Box(
         Modifier
             .fillMaxSize()
-            .background(Tok.Bg0)
+            .background(Brush.verticalGradient(listOf(Tok.Bg0.copy(alpha = 0f), Tok.Bg0.copy(alpha = 0.42f))))
     ) {
         LazyColumn(
             Modifier.fillMaxSize(),
@@ -92,7 +92,7 @@ fun EditorScreen(
                         Modifier
                             .fillMaxWidth()
                             .aspectRatio(16f / 10f)
-                            .glass(Tok.RCard)
+                            .glass(Tok.RCard, Frostness.UltraThin)
                     ) {
                         AsyncImage(
                             model = state.photoUri,
@@ -258,7 +258,7 @@ fun EditorScreen(
                 .fillMaxWidth()
                 .background(
                     Brush.verticalGradient(
-                        listOf(Tok.Bg0.copy(alpha = 0f), Tok.Bg0.copy(alpha = 0.92f), Tok.Bg0)
+                        listOf(Tok.Bg0.copy(alpha = 0f), Tok.Bg0.copy(alpha = 0.55f), Tok.Bg0.copy(alpha = 0.78f))
                     )
                 )
                 .navigationBarsPadding()
@@ -285,7 +285,7 @@ fun EditorScreen(
             Text(
                 "原图不会被修改，生成副本存入相册 Pictures/影迹",
                 style = MaterialTheme.typography.labelSmall,
-                color = Tok.Text4
+                color = Tok.Text3
             )
         }
     }
@@ -364,7 +364,7 @@ fun EditorScreen(
         ModalBottomSheet(
             onDismissRequest = { showWb = false },
             sheetState = sheetState,
-            containerColor = Tok.Bg1,
+            containerColor = Tok.Sheet,
             scrimColor = Tok.Bg0.copy(alpha = 0.6f)
         ) {
             Column(Modifier.padding(horizontal = Tok.Page, vertical = Tok.S)) {
@@ -405,14 +405,18 @@ fun EditorScreen(
 @Composable
 private fun WbOption(text: String, selected: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(Tok.RInner)
-    val bg = if (selected) Tok.Accent.copy(alpha = 0.14f) else Tok.Glass
-    val stroke = if (selected) Tok.Accent.copy(alpha = 0.50f) else Tok.Stroke
+    val surface = if (selected) {
+        Modifier
+            .clip(shape)
+            .background(Tok.Accent.copy(alpha = 0.26f))
+            .border(1.dp, Tok.Accent.copy(alpha = 0.55f), shape)
+    } else {
+        Modifier.glass(Tok.RInner, Frostness.Thin)
+    }
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(bg)
-            .border(1.dp, stroke, shape)
+            .then(surface)
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -445,7 +449,7 @@ private fun TextEditDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Tok.Bg1,
+        containerColor = Tok.Sheet,
         title = {
             Text(title, style = MaterialTheme.typography.titleLarge, color = Tok.Text1)
         },
