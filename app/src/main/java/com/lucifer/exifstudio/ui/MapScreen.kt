@@ -230,7 +230,7 @@ fun MapPickerScreen(
                     Modifier
                         .weight(1f)
                         .height(50.dp)
-                        .glass(Tok.RButton)
+                        .glass(Tok.RButton, Frostness.Thin)
                         .padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -304,7 +304,7 @@ fun MapPickerScreen(
                 Box(
                     Modifier
                         .size(50.dp)
-                        .glass(Tok.RButton)
+                        .glass(Tok.RButton, Frostness.Thin)
                         .clickable { showSourceSheet = true },
                     contentAlignment = Alignment.Center
                 ) {
@@ -322,7 +322,7 @@ fun MapPickerScreen(
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .glass(Tok.RInner)
+                        .glass(Tok.RInner, Frostness.Thin)
                         .padding(horizontal = 14.dp, vertical = 10.dp)
                 ) {
                     Text(
@@ -338,7 +338,7 @@ fun MapPickerScreen(
                     Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp)
-                        .glass(Tok.RInner)
+                        .glass(Tok.RInner, Frostness.Thick)
                         .heightIn(max = 260.dp)
                 ) {
                     LazyColumn {
@@ -381,7 +381,7 @@ fun MapPickerScreen(
                 .systemBarsPadding()
                 .imePadding()
                 .padding(horizontal = Tok.Page, vertical = Tok.M)
-                .glass(Tok.RSheet)
+                .glass(Tok.RSheet, Frostness.UltraThick)
                 .padding(Tok.L)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -415,7 +415,7 @@ fun MapPickerScreen(
                     color = Tok.Accent2
                 )
                 Spacer(Modifier.width(10.dp))
-                Text("WGS-84", style = MaterialTheme.typography.labelSmall, color = Tok.Text4)
+                Text("WGS-84", style = MaterialTheme.typography.labelSmall, color = Tok.Text3)
             }
             Spacer(Modifier.height(14.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -438,7 +438,7 @@ fun MapPickerScreen(
             Text(
                 "提示：长按地图定点 · 搜索命中后地图会自动跳转",
                 style = MaterialTheme.typography.labelSmall,
-                color = Tok.Text4
+                color = Tok.Text3
             )
         }
 
@@ -448,7 +448,7 @@ fun MapPickerScreen(
                 .systemBarsPadding()
                 .padding(start = Tok.Page, top = 74.dp)
                 .size(40.dp)
-                .glass(20.dp)
+                .glass(20.dp, Frostness.Thin)
                 .clickable { onBack() },
             contentAlignment = Alignment.Center
         ) {
@@ -519,7 +519,7 @@ private fun MapSourceSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Tok.Bg1,
+        containerColor = Tok.Sheet,
         scrimColor = Tok.Bg0.copy(alpha = 0.6f)
     ) {
         Column(
@@ -586,7 +586,7 @@ private fun CoordEditDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Tok.Bg1,
+        containerColor = Tok.Sheet,
         title = {
             Text("手动输入经纬度", style = MaterialTheme.typography.titleLarge, color = Tok.Text1)
         },
@@ -651,12 +651,12 @@ fun GlassField(
         Modifier
             .fillMaxWidth()
             .height(46.dp)
-            .glass(Tok.RInner)
+            .glass(Tok.RInner, Frostness.Thin)
             .padding(horizontal = 12.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         if (value.isEmpty()) {
-            Text(placeholder, style = MaterialTheme.typography.bodySmall, color = Tok.Text4)
+            Text(placeholder, style = MaterialTheme.typography.bodySmall, color = Tok.Text3)
         }
         BasicTextField(
             value = value,
