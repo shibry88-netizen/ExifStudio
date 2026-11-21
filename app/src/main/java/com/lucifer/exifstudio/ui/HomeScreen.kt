@@ -167,7 +167,7 @@ fun HomeScreen(
         Text(
             "所有元数据仅保存在设备本地",
             style = MaterialTheme.typography.labelSmall,
-            color = Tok.Text4
+            color = Tok.Text3
         )
         Spacer(Modifier.height(30.dp))
     }
@@ -180,7 +180,7 @@ private fun PhotoPreviewCard(state: StudioState, onClick: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .aspectRatio(16f / 10f)
-            .glass(Tok.RCard)
+            .glass(Tok.RCard, Frostness.UltraThin)
             .clickable { onClick() }
     ) {
         AsyncImage(
@@ -272,9 +272,8 @@ private fun HistoryThumb(item: HistoryItem, onClick: () -> Unit) {
         Box(
             Modifier
                 .size(112.dp)
+                .glass(Tok.RThumb, Frostness.UltraThin)
                 .clip(RoundedCornerShape(Tok.RThumb))
-                .background(Tok.Glass)
-                .border(1.dp, Tok.Stroke, RoundedCornerShape(Tok.RThumb))
         ) {
             AsyncImage(
                 model = item.uri,
