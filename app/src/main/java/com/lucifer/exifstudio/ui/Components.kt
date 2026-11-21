@@ -1,5 +1,6 @@
 package com.lucifer.exifstudio.ui
 
+import android.graphics.Bitmap
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -34,18 +35,39 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.ImageShader
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.random.Random
 
-/** 背景：深空黑 + 三团流动光斑。玻璃感由光决定，不由边框决定。 */
+/**
+ * 颗粒贴图：128×128 预乘白噪点，一次生成、全站平铺。
+ *
+ * 这是"磨砂"和"半透明色块"的唯一区别——玻璃背面必须能看见细密的散射，
+ * 否则叠在光斑上只会是一层脏灰。
+ */
+private val Grain: ImageBitmap by lazy {
+    val n = 128
+    val rnd = Random(0x5EED_2026)
+    val px = IntArray(n * n) {
+        val a = rnd.nextInt(0, 64)
+        (a shl 24) or (a shl 16) or (a shl 8) or a
+    }
+    Bitmap.createBitmap(px, n, n, Bitmap.Config.ARGB_8888).asImageBitmap()
+}
+
+/** 背景：深空底 + 三团光。没 blur —— 径向渐变本身就是软的，不用离屏模糊省那 4ms。 */
 @Composable
 fun AuroraBackground(content: @Composable BoxScope.() -> Unit) {
     Box(
@@ -53,9 +75,9 @@ fun AuroraBackground(content: @Composable BoxScope.() -> Unit) {
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Tok.Bg0, Tok.Bg1)))
     ) {
-        Blob(Tok.Accent.copy(alpha = 0.68f), 380.dp, (-90).dp, (-40).dp)
-        Blob(Color(0xFF9678FF).copy(alpha = 0.38f), 340.dp, 200.dp, 120.dp)
-        Blob(Tok.Accent2.copy(alpha = 0.42f), 360.dp, (-60).dp, 520.dp)
+        Blob(Tok.Accent.copy(alpha = 0.52f), 380.dp, (-90).dp, (-40).dp)
+        Blob(Color(0xFF9678FF).copy(alpha = 0.30f), 340.dp, 200.dp, 120.dp)
+        Blob(Tok.Accent2.copy(alpha = 0.34f), 360.dp, (-60).dp, 520.dp)
         content()
     }
 }
@@ -66,40 +88,51 @@ private fun Blob(color: Color, size: Dp, x: Dp, y: Dp) {
         Modifier
             .offset(x = x, y = y)
             .size(size)
-            .blur(90.dp)
             .background(
-                Brush.radialGradient(listOf(color, color.copy(alpha = 0f))),
+                Brush.radialGradient(
+                    0.00f to color,
+                    0.38f to color.copy(alpha = color.alpha * 0.62f),
+                    0.70f to color.copy(alpha = color.alpha * 0.20f),
+                    1.00f to color.copy(alpha = 0f)
+                ),
                 CircleShape
             )
     )
 }
 
 /**
- * 液态玻璃材质：
- * 底胚（6% 白渐变）+ 顶部内高光 18% + 外 1px 8% 亮边 + 大而柔的环境投影。
+ * 磨砂玻璃材质。
+ *
+ * 三层纯填充，全部走 [drawWithCache] 的 drawBehind：
+ *   1. 底胚 —— Frost 按 [frost] 分级给不透明度，光斑透过来只剩柔光
+ *   2. 顶缘内高光 —— 竖直渐变，从 17% 白化到透明，止于 55%
+ *   3. 极细颗粒 —— 预生成噪点平铺，压到 5%
+ *
+ * 没有 shadow()、没有 RenderEffect。没有离屏层，就没有黑方块，也没有逐帧模糊。
  */
 fun Modifier.glass(
     radius: Dp = Tok.RCard,
-    tint: Color = Tok.Glass
+    frost: Frostness = Frostness.Regular,
+    tint: Color = Tok.Frost
 ): Modifier {
     val shape = RoundedCornerShape(radius)
+    val veil = tint.copy(alpha = frost.veil)
     return this
-        .shadow(
-            elevation = 24.dp,
-            shape = shape,
-            clip = false,
-            ambientColor = Color.Black,
-            spotColor = Color.Black
-        )
         .clip(shape)
-        .background(
-            Brush.verticalGradient(
-                0f to tint.copy(alpha = 0.10f),
-                0.44f to tint.copy(alpha = 0.028f),
-                1f to tint.copy(alpha = 0.05f)
-            )
-        )
-        .border(1.dp, Tok.Stroke, shape)
+        .drawWithCache {
+            val grainBrush = ShaderBrush(ImageShader(Grain, TileMode.Repeated, TileMode.Repeated))
+            onDrawBehind {
+                drawRect(veil)
+                drawRect(
+                    Brush.verticalGradient(
+                        0.00f to Tok.FrostTop,
+                        0.55f to Color.Transparent
+                    )
+                )
+                drawRect(grainBrush, alpha = 0.05f)
+            }
+        }
+        .border(1.dp, Tok.FrostEdge, shape)
 }
 
 @Composable
@@ -210,7 +243,12 @@ fun DividerLine() {
     )
 }
 
-/** 主 CTA：54dp 高 / 26dp 圆角 / 竖向渐变 + 强调色辉光 */
+/**
+ * 主 CTA：54dp / 26dp 圆角 / 竖向渐变。
+ *
+ * 辉光不再用有色 shadow —— 那是黑方块的来源。改成在渐变内部压一层暖高光和底部
+ * 暗角，视觉上像有光从左上方打过来，只是不往外溢。
+ */
 @Composable
 fun PrimaryButton(
     text: String,
@@ -233,17 +271,27 @@ fun PrimaryButton(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-                alpha = if (enabled) 1f else 0.45f
+                alpha = if (enabled) 1f else 0.42f
             }
-            .shadow(
-                elevation = 18.dp,
-                shape = shape,
-                clip = false,
-                ambientColor = Tok.Accent,
-                spotColor = Tok.Accent
-            )
             .clip(shape)
-            .background(Brush.verticalGradient(listOf(Tok.AccentLight, Tok.AccentDeep)))
+            .drawWithCache {
+                val fill = Brush.verticalGradient(listOf(Tok.AccentLight, Tok.AccentDeep))
+                val sheen = Brush.verticalGradient(
+                    0.00f to Color(0x59FFFFFF),
+                    0.48f to Color(0x0DFFFFFF),
+                    0.52f to Color.Transparent
+                )
+                val depth = Brush.verticalGradient(
+                    0.60f to Color.Transparent,
+                    1.00f to Color(0x33000000)
+                )
+                onDrawBehind {
+                    drawRect(fill)
+                    drawRect(sheen)
+                    drawRect(depth)
+                }
+            }
+            .border(1.dp, Color(0x38FFFFFF), shape)
             .clickable(
                 interactionSource = interaction,
                 indication = null,
@@ -293,7 +341,7 @@ fun GhostButton(
                 scaleX = scale
                 scaleY = scale
             }
-            .glass(Tok.RButton)
+            .glass(Tok.RButton, Frostness.Thin)
             .clickable(
                 interactionSource = interaction,
                 indication = null,
@@ -312,7 +360,7 @@ fun GhostButton(
     }
 }
 
-/** 全圆 Chip */
+/** 全圆 Chip：未选中走最薄一档磨砂，选中走强调色浸染 */
 @Composable
 fun Pill(
     text: String,
@@ -320,20 +368,28 @@ fun Pill(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val bg = if (selected) Tok.Accent.copy(alpha = 0.20f) else Tok.Glass
-    val stroke = if (selected) Tok.Accent.copy(alpha = 0.60f) else Tok.Stroke
-    val fg = if (selected) Color.White else Tok.Text2
+    val shape = RoundedCornerShape(Tok.RChip)
+    val decoration = if (selected) {
+        Modifier
+            .clip(shape)
+            .background(Tok.Accent.copy(alpha = 0.26f))
+            .border(1.dp, Tok.Accent.copy(alpha = 0.55f), shape)
+    } else {
+        Modifier.glass(Tok.RChip, Frostness.UltraThin)
+    }
     Box(
         modifier
             .height(34.dp)
-            .clip(RoundedCornerShape(Tok.RChip))
-            .background(bg)
-            .border(1.dp, stroke, RoundedCornerShape(Tok.RChip))
+            .then(decoration)
             .clickable { onClick() }
             .padding(horizontal = 15.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text, style = MaterialTheme.typography.labelLarge, color = fg)
+        Text(
+            text,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) Color.White else Tok.Text2
+        )
     }
 }
 
@@ -349,9 +405,7 @@ fun BackBar(title: String, subtitle: String? = null, onBack: () -> Unit) {
         Box(
             Modifier
                 .size(34.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0x0DFFFFFF))
-                .border(1.dp, Color(0x12FFFFFF), RoundedCornerShape(12.dp))
+                .glass(12.dp, Frostness.UltraThin)
                 .clickable { onBack() },
             contentAlignment = Alignment.Center
         ) {
