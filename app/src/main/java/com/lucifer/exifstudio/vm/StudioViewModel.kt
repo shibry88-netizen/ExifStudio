@@ -159,7 +159,7 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
             val result = withContext(Dispatchers.IO) {
                 val file = PhotoStore.cacheFile(context, "out_${System.currentTimeMillis()}.jpg")
                 if (!ExifEngine.write(context, uri, snapshot.profile, file)) {
-                    return@withContext Saved(null, "")
+                    return@withContext Saved(null, ExifEngine.lastError)
                 }
                 // 双引擎回读：AndroidX 读得到 + 系统 ExifInterface 读得到，才算真写进去
                 val check = ExifEngine.verify(file)
@@ -194,7 +194,7 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
                 message = if (saved != null) {
                     "已保存到相册\n$check"
                 } else {
-                    "写入失败。HEIC/ProRAW 等格式可能不支持原地写 EXIF，请换 JPEG 再试。"
+                    "写入失败：${check.ifBlank { "未知原因" }}\nHEIC/ProRAW 等格式可能不支持原地写 EXIF，请换 JPEG 再试。"
                 }
             )
         }

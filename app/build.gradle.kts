@@ -14,8 +14,8 @@ android {
         minSdk = 29
         // Android 16/17 对新安装应用的 targetSdk 有下限要求，这里跟随当年平台
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.3.0"
+        versionCode = 6
+        versionName = "1.3.1"
         vectorDrawables { useSupportLibrary = true }
     }
 

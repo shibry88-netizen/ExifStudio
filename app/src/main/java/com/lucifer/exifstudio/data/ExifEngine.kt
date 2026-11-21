@@ -98,24 +98,57 @@ object ExifEngine {
 
     // ---------- 写入 ----------
 
-    /** 把 [src] 复制成 [dst] 并覆盖 EXIF；返回是否成功落盘 */
+    /** 最近一次失败原因，供界面显示；不参与逻辑 */
+    @Volatile
+    var lastError: String = ""
+        private set
+
+    /**
+     * 把 [src] 复制成 [dst] 并覆盖 EXIF；返回是否成功落盘。
+     *
+     * 写入分两段，缺一不可：
+     *
+     *  1. `applyProfile` + `saveAttributes` —— 让 AndroidX 把目录骨架（Exif IFD
+     *     / GPS IFD / Interop IFD）建出来，并保住缩略图这类它才管得了的结构。
+     *  2. `ExifWriter.apply` —— 用规范字节重建整段 APP1 覆盖掉第 1 段的结果。
+     *
+     * 只做第 1 段是不够的：1.3.7 的 setAttribute 对 URATIONAL 标签会因格式
+     * 猜错而 `continue`，对 UNDEFINED / BYTE 标签会写成 ASCII 字面量，
+     * 结果是标签静默消失或类型错乱，系统引擎与相册水印判定整段失效。
+     */
     fun write(context: Context, src: Uri, profile: ExifProfile, dst: File): Boolean {
+        lastError = ""
         return try {
             dst.parentFile?.mkdirs()
-            val input = context.contentResolver.openInputStream(src) ?: return false
+            val input = context.contentResolver.openInputStream(src) ?: run {
+                lastError = "读不到源图"
+                return false
+            }
             input.use { ins ->
                 dst.outputStream().use { out -> ins.copyTo(out, 128 * 1024) }
             }
 
             // 源图不是 JPEG（截屏、微信/QQ 转发图常是 PNG / WebP）时先转码。
             // 否则 ExifInterface 会按 .jpg 扩展名当 JPEG 解析，直接失败。
-            if (!isJpeg(dst) && !transcodeToJpeg(dst)) return false
+            if (!isJpeg(dst) && !transcodeToJpeg(dst)) {
+                lastError = "源图不是 JPEG，转码失败"
+                return false
+            }
 
             val ex = ExifInterface(dst.absolutePath)
+            // Orientation 必须在 saveAttributes 之前取，之后它会被规范化掉
+            val keepOri = ex.getAttribute(ExifInterface.TAG_ORIENTATION)
+                ?.trim()?.toIntOrNull() ?: 1
             applyProfile(ex, profile, dst.absolutePath)
-            ex.saveAttributes()
+            runCatching { ex.saveAttributes() }
+
+            if (!ExifWriter.apply(dst, profile, profile.width, profile.height, keepOri)) {
+                lastError = ExifWriter.lastError.ifBlank { "ExifWriter 失败" }
+                return false
+            }
             true
         } catch (t: Throwable) {
+            lastError = t.message ?: t.javaClass.simpleName
             false
         }
     }
