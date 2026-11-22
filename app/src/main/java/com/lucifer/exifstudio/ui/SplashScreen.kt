@@ -26,6 +26,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.asAndroidPath
+import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -49,18 +51,19 @@ private val WORD_RATIO = 3.45208f
 private class Trace(val parts: List<Path>, val lens: FloatArray, val total: Float)
 
 private fun trace(path: Path): Trace {
-    val pm = PathMeasure()
-    pm.setPath(path, false)
+    val pm = android.graphics.PathMeasure(path.asAndroidPath(), false)
     val parts = ArrayList<Path>()
     val lens = ArrayList<Float>()
     var total = 0f
     while (true) {
         val len = pm.length
-        val p = Path()
-        if (len > 0f && pm.getSegment(0f, len, p, true)) {
-            parts.add(p)
-            lens.add(len)
-            total += len
+        if (len > 0f) {
+            val ap = android.graphics.Path()
+            if (pm.getSegment(0f, len, ap, true)) {
+                parts.add(ap.asComposePath())
+                lens.add(len)
+                total += len
+            }
         }
         if (!pm.nextContour()) break
     }
