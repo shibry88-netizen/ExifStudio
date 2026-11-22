@@ -7,7 +7,7 @@
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
 > Task :app:buildKotlinToolingMetadata
 > Task :app:checkKotlinGradlePluginConfigurationErrors
-> Task :app:generateReleaseBuildConfig
+> Task :app:generateReleaseBuildConfig FROM-CACHE
 > Task :app:checkReleaseDuplicateClasses
 > Task :app:generateReleaseResValues FROM-CACHE
 > Task :app:checkReleaseAarMetadata
@@ -18,8 +18,10 @@
 > Task :app:parseReleaseLocalResources FROM-CACHE
 > Task :app:createReleaseCompatibleScreenManifests
 > Task :app:extractDeepLinksRelease FROM-CACHE
-> Task :app:processReleaseMainManifest
-> Task :app:processReleaseManifest
+> Task :app:processReleaseMainManifest FROM-CACHE
+> Task :app:processReleaseManifest FROM-CACHE
+> Task :app:processReleaseManifestForPackage FROM-CACHE
+> Task :app:processReleaseResources FROM-CACHE
 > Task :app:javaPreCompileRelease FROM-CACHE
 > Task :app:extractProguardFiles
 > Task :app:mergeReleaseArtProfile
@@ -28,21 +30,17 @@
 > Task :app:compileReleaseShaders NO-SOURCE
 > Task :app:generateReleaseAssets UP-TO-DATE
 > Task :app:mergeReleaseAssets
-> Task :app:processReleaseManifestForPackage
 > Task :app:compressReleaseAssets FROM-CACHE
 > Task :app:extractReleaseVersionControlInfo
 > Task :app:processApplicationManifestReleaseForBundle
+> Task :app:bundleReleaseResources FROM-CACHE
 > Task :app:collectReleaseDependencies
-> Task :app:processReleaseResources
 > Task :app:sdkReleaseDependencyData
 > Task :app:validateSigningRelease
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
-> Task :app:bundleReleaseResources
-> Task :app:compileReleaseKotlin
-e: file:///home/runner/work/ExifStudio/ExifStudio/app/src/main/java/com/lucifer/exifstudio/MainActivity.kt:176:21 Cannot find a parameter with this name: locationAllowed
-e: file:///home/runner/work/ExifStudio/ExifStudio/app/src/main/java/com/lucifer/exifstudio/MainActivity.kt:177:21 Cannot find a parameter with this name: onRequestLocation
 > Task :app:compileReleaseKotlin FAILED
+e: file:///home/runner/work/ExifStudio/ExifStudio/app/src/main/java/com/lucifer/exifstudio/ui/SplashScreen.kt:65:17 Unresolved reference: nextContour
 FAILURE: Build failed with an exception.
 > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
 > Run with --info or --debug option to get more log output.
