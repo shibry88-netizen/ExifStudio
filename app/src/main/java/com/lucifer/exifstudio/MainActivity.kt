@@ -37,6 +37,7 @@ import com.lucifer.exifstudio.ui.ExifStudioTheme
 import com.lucifer.exifstudio.ui.HomeScreen
 import com.lucifer.exifstudio.ui.LensPickerSheet
 import com.lucifer.exifstudio.ui.MapPickerScreen
+import com.lucifer.exifstudio.ui.SplashOverlay
 import com.lucifer.exifstudio.vm.StudioViewModel
 
 class MainActivity : ComponentActivity() {
@@ -82,6 +83,7 @@ private fun AppRoot(vm: StudioViewModel, incoming: MutableState<Uri?>) {
     var screen by remember { mutableStateOf(Screen.Home) }
     var showDevices by remember { mutableStateOf(false) }
     var showLens by remember { mutableStateOf(false) }
+    var splash by remember { mutableStateOf(true) }
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
 
@@ -189,6 +191,10 @@ private fun AppRoot(vm: StudioViewModel, incoming: MutableState<Uri?>) {
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 112.dp, start = 20.dp, end = 20.dp)
             )
+
+            if (splash) {
+                SplashOverlay(onFinished = { splash = false })
+            }
         }
 
         if (showDevices) {
